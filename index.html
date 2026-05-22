@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAP Cadet Promotion Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>CAP Cadet Promotion Dashboard</h1>
+    <p>Upload a cadet full-track report to identify overdue promotions, upcoming promotion dates, completed requirements, and missing items. Leadership and Aerospace Education count as complete when either the written test or the interactive module is complete.</p>
+  </header>
+
+  <main>
+    <section class="upload-grid">
+      <div class="upload-card">
+        <label for="cadetFile">Cadet Full-Track Report</label>
+        <small>Use the exported cadet full-track report. The dashboard now uses the built-in promotion requirements automatically. CSV and Excel <code>.xlsx</code> files are supported.</small>
+        <input id="cadetFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+      </div>
+    </section>
+    <div id="statusMessage" class="status-banner info">Built-in promotion requirements are loaded. Upload a cadet full-track report to begin.</div>
+
+    <nav class="tabs">
+      <button class="tab active" data-view="dashboard">Main Dashboard</button>
+      <button class="tab" data-view="all">All Promotions</button>
+      <button class="tab" data-view="requirements">Requirements Matrix</button>
+    </nav>
+
+    <section id="dashboardView">
+      <div class="stats" id="stats"></div>
+      <div class="section-grid">
+        <div class="card">
+          <div class="card-heading section-heading">
+            <h2>Overdue Promotions</h2>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Sort by</span>
+                <select id="overdueSort" class="dashboard-sort" data-section="overdue">
+                  <option value="dueDate">Due date</option>
+                  <option value="name">Name</option>
+                  <option value="rank">Rank</option>
+                  <option value="progress">Progress</option>
+                </select>
+              </label>
+              <span id="overdueCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="overdueTable"></table></div>
+        </div>
+        <div class="card">
+          <div class="card-heading section-heading">
+            <h2>Coming Up Soon</h2>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Sort by</span>
+                <select id="soonSort" class="dashboard-sort" data-section="soon">
+                  <option value="dueDate">Due date</option>
+                  <option value="name">Name</option>
+                  <option value="rank">Rank</option>
+                  <option value="progress">Progress</option>
+                </select>
+              </label>
+              <span id="soonCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="soonTable"></table></div>
+          <p class="note">“Soon” means due within the next 14 days. Change <code>SOON_DAYS</code> in the JavaScript if your squadron wants a different window.</p>
+        </div>
+        <div class="card">
+          <div class="card-heading section-heading">
+            <h2>Ready Promotions</h2>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Sort by</span>
+                <select id="readySort" class="dashboard-sort" data-section="ready">
+                  <option value="dueDate">Due date</option>
+                  <option value="name">Name</option>
+                  <option value="rank">Rank</option>
+                  <option value="progress">Progress</option>
+                </select>
+              </label>
+              <span id="readyCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="readyTable"></table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Main Dashboard Exclusions</h2>
+            <p class="note">Excluded cadets stay visible in All Promotions, but they are removed from main dashboard stats and priority tables until you re-add them.</p>
+          </div>
+          <span id="excludedCount" class="badge future">0 excluded</span>
+        </div>
+        <div id="excludedCadetsList" class="excluded-list"></div>
+      </div>
+    </section>
+
+    <section id="allView" class="hidden">
+      <div class="card">
+        <h2>All Cadet Promotions</h2>
+        <div class="controls">
+          <input id="searchInput" type="search" placeholder="Search name, CAPID, email, or achievement..." />
+          <select id="statusFilter">
+            <option value="all">All statuses</option>
+            <option value="Overdue">Overdue</option>
+            <option value="Due Soon">Due Soon</option>
+            <option value="Ready">Ready</option>
+            <option value="Not Ready">Not Ready</option>
+            <option value="Future">Future</option>
+          </select>
+          <select id="achievementFilter"><option value="all">All achievements</option></select>
+        </div>
+        <div class="table-wrap"><table id="allTable"></table></div>
+        <p class="note">Use the button below each cadet name to exclude them from the main dashboard or re-add them later.</p>
+      </div>
+    </section>
+
+    <section id="requirementsView" class="hidden">
+      <div class="card">
+        <h2>Promotion Requirements Matrix</h2>
+        <div class="table-wrap"><table id="requirementsTable"></table></div>
+        <p class="note">Blank or <code>None</code> cells mean that requirement is not required for that promotion in the built-in requirements file.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Made by Amit Sail for the Raritan Valley Composite Squadron.</p>
+    <p>Contact: <a href="mailto:amit.sail@njwg.cap.gov">amit.sail@njwg.cap.gov</a></p>
+  </footer>
+
+<script src="script.js" defer></script>
+</body>
+</html>
