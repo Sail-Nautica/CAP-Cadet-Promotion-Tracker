@@ -10,18 +10,38 @@
 <body>
   <header>
     <h1>CAP Cadet Promotion Dashboard</h1>
-    <p>Upload a cadet full-track report to identify overdue promotions, upcoming promotion dates, completed requirements, and missing items. Leadership and Aerospace Education count as complete when either the written test or the interactive module is complete.</p>
+    <p>Start by loading a cadet full-track report. The dashboard opens after a CSV or Excel workbook is parsed, then identifies overdue promotions, upcoming promotion dates, completed requirements, and missing items.</p>
   </header>
 
-  <main>
-    <section class="upload-grid">
-      <div class="upload-card">
-        <label for="cadetFile">Cadet Full-Track Report</label>
-        <small>Use the exported cadet full-track report. The dashboard now uses the built-in promotion requirements automatically. CSV and Excel <code>.xlsx</code> files are supported.</small>
-        <input id="cadetFile" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+  <input id="cadetFile" class="visually-hidden" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
+
+  <main id="uploadPage" class="upload-page">
+    <section class="upload-gate">
+      <div class="upload-card upload-panel">
+        <span class="eyebrow">Report Upload</span>
+        <h2>Load Cadet Data</h2>
+        <p>CSV and Excel <code>.xlsx</code> reports are supported. Promotion requirements are built into the dashboard.</p>
+        <div id="uploadDropZone" class="file-drop-zone">
+          <div>
+            <strong>Select or Drop Report</strong>
+            <span id="uploadFileName">No file selected</span>
+          </div>
+          <button id="chooseFileButton" class="primary-button" type="button">Choose File</button>
+        </div>
+        <div id="uploadStatusMessage" data-status-message class="status-banner info" role="status">Upload a cadet full-track report to continue.</div>
       </div>
     </section>
-    <div id="statusMessage" class="status-banner info">Built-in promotion requirements are loaded. Upload a cadet full-track report to begin.</div>
+  </main>
+
+  <main id="dashboardPage" class="dashboard-page hidden">
+    <div class="dashboard-topbar">
+      <div>
+        <span class="eyebrow">Loaded Report</span>
+        <strong id="loadedReportName">No report loaded</strong>
+      </div>
+      <button id="uploadAnotherButton" class="secondary-button" type="button">Change Report</button>
+    </div>
+    <div id="dashboardStatusMessage" data-status-message class="status-banner info" role="status">Cadet report loaded.</div>
 
     <nav class="tabs">
       <button class="tab active" data-view="dashboard">Main Dashboard</button>
