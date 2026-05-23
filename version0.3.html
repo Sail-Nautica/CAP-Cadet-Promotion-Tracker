@@ -1,0 +1,2802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAP Cadet Promotion Dashboard</title>
+  <style>
+:root {
+  --bg: #e7edf5;
+  --bg-deep: #dbe4ef;
+  --card: #ffffff;
+  --card-alt: #f5f8fc;
+  --text: #16253b;
+  --muted: #5c6d86;
+  --line: #c8d4e3;
+  --line-strong: #aebed2;
+  --cap-blue-900: #0f2747;
+  --cap-blue-700: #1b4f91;
+  --cap-blue-500: #3f6fa7;
+  --cap-red: #bf3d31;
+  --cap-red-soft: #fce5e2;
+  --cap-gold: #b8872f;
+  --cap-gold-soft: #f8efd7;
+  --cap-green: #1e6b43;
+  --cap-green-soft: #e1f4e8;
+  --cap-silver: #d8e0ea;
+  --cap-silver-deep: #93a7bf;
+  --shadow: 0 18px 38px rgba(15, 39, 71, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Aptos", "Segoe UI", "Helvetica Neue", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 32%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+}
+
+header {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(135deg, var(--cap-blue-900) 0%, #163a68 52%, var(--cap-blue-700) 100%);
+  color: #fff;
+  padding: 34px 32px 76px;
+  border-bottom: 5px solid var(--cap-red);
+}
+
+header::after {
+  content: "";
+  position: absolute;
+  inset: auto -6% -54px auto;
+  width: min(420px, 48vw);
+  height: 180px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(216, 224, 234, 0.24), rgba(216, 224, 234, 0));
+  transform: rotate(-11deg);
+  border-radius: 28px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 3vw, 2.8rem);
+  letter-spacing: 0.01em;
+}
+
+.header-title-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+header p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  max-width: 920px;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.55;
+}
+
+main {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 32px 40px;
+}
+
+.upload-page {
+  max-width: 980px;
+}
+
+.upload-gate,
+.dashboard-topbar {
+  margin-top: 24px;
+}
+
+.upload-gate {
+  display: grid;
+  place-items: start center;
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.upload-card,
+.card {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(174, 190, 210, 0.8);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.upload-card {
+  padding: 20px;
+  border-top: 5px solid var(--cap-blue-700);
+}
+
+.upload-panel {
+  width: min(100%, 760px);
+  padding: 28px;
+}
+
+.upload-panel h2 {
+  margin-bottom: 8px;
+  font-size: 1.55rem;
+}
+
+.upload-panel p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.card {
+  padding: 20px;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--cap-red);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.upload-card label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--cap-blue-900);
+}
+
+.upload-card small,
+.note {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.upload-card code,
+.note code {
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  background: var(--card-alt);
+  color: var(--cap-blue-900);
+}
+
+.status-banner {
+  margin: 16px 0 0;
+  padding: 13px 16px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.status-banner.info {
+  background: #edf4ff;
+  border-color: #c2d7f0;
+  color: #20446f;
+}
+
+.status-banner.success {
+  background: var(--cap-green-soft);
+  border-color: #a7d6ba;
+  color: var(--cap-green);
+}
+
+.status-banner.error {
+  background: var(--cap-red-soft);
+  border-color: #efb8b0;
+  color: #8f2920;
+}
+
+input[type="file"],
+input[type="search"],
+select,
+.action-chip,
+.primary-button,
+.secondary-button {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+input[type="file"]:focus,
+input[type="search"]:focus,
+select:focus,
+.tab:focus,
+.action-chip:focus,
+.primary-button:focus,
+.secondary-button:focus {
+  outline: none;
+  border-color: var(--cap-blue-700);
+  box-shadow: 0 0 0 4px rgba(27, 79, 145, 0.14);
+}
+
+input[type="file"].visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-drop-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 132px;
+  padding: 20px;
+  border: 2px dashed var(--line-strong);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(239, 245, 252, 0.96)),
+    #fff;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.file-drop-zone.drag-over {
+  border-color: var(--cap-blue-700);
+  background: #edf4ff;
+  box-shadow: 0 0 0 4px rgba(27, 79, 145, 0.12);
+}
+
+.file-drop-zone strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--cap-blue-900);
+  font-size: 1.05rem;
+}
+
+.file-drop-zone span {
+  display: block;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.primary-button,
+.secondary-button {
+  width: auto;
+  min-width: 130px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.primary-button {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--cap-blue-900), var(--cap-blue-700));
+  color: #fff;
+}
+
+.secondary-button {
+  border-color: rgba(174, 190, 210, 0.9);
+  background: #fff;
+  color: var(--cap-blue-900);
+}
+
+.primary-button:hover,
+.secondary-button:hover {
+  transform: translateY(-1px);
+}
+
+.dashboard-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(174, 190, 210, 0.84);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow);
+}
+
+.dashboard-topbar strong {
+  display: block;
+  color: var(--cap-blue-900);
+  overflow-wrap: anywhere;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.tab {
+  border: 1px solid rgba(174, 190, 210, 0.9);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--cap-blue-900);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.tab:hover,
+.action-chip:hover {
+  transform: translateY(-1px);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, var(--cap-blue-900), var(--cap-blue-700));
+  color: #fff;
+  border-color: transparent;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.stat {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(174, 190, 210, 0.84);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 252, 0.98)),
+    #fff;
+  box-shadow: 0 12px 26px rgba(15, 39, 71, 0.08);
+}
+
+.summary-card {
+  padding: 14px 16px;
+  border: 1px solid rgba(174, 190, 210, 0.84);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
+}
+
+.summary-card .action-chip {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.stat .num {
+  font-size: 2.05rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--cap-blue-900);
+}
+
+.summary-num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--cap-blue-900);
+}
+
+.stat .label {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.summary-label {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.section-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.print-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+
+.print-report {
+  display: none;
+}
+
+#milestonesView > .paired-section + .paired-section,
+#milestonesView > .paired-section + .card {
+  margin-top: 18px;
+}
+
+.paired-section {
+  --paired-card-height: 680px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.paired-section > .card {
+  display: flex;
+  flex-direction: column;
+  height: var(--paired-card-height);
+  min-width: 0;
+  min-height: 0;
+}
+
+.paired-section .table-wrap {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+}
+
+.card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-heading {
+  margin-bottom: 14px;
+}
+
+.section-heading h2 {
+  margin-bottom: 0;
+}
+
+.section-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.section-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.section-sort select {
+  width: auto;
+  min-width: 132px;
+  padding: 8px 10px;
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 1.25rem;
+  color: var(--cap-blue-900);
+}
+
+.card-heading h2 {
+  margin-bottom: 8px;
+}
+
+h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 0.8fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.table-wrap {
+  overflow: auto;
+  max-height: 560px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.92rem;
+}
+
+th,
+td {
+  padding: 11px 10px;
+  border-bottom: 1px solid #d7e1ec;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  color: var(--cap-blue-900);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+tbody tr:nth-child(even) td {
+  background: rgba(245, 248, 252, 0.65);
+}
+
+tr:hover td {
+  background: rgba(228, 238, 249, 0.8);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.cell-detail {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.overdue {
+  background: var(--cap-red-soft);
+  color: #972e24;
+}
+
+.soon {
+  background: var(--cap-gold-soft);
+  color: #8d6418;
+}
+
+.ready {
+  background: var(--cap-green-soft);
+  color: var(--cap-green);
+}
+
+.notready,
+.future {
+  background: #edf2f8;
+  color: #4d6078;
+}
+
+.progress {
+  width: 124px;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  background: #dbe4ef;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--cap-blue-700), #5b83b7);
+}
+
+.missing-list {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #d7e1ec;
+  background: #f3f7fb;
+  color: #3d4f67;
+  font-size: 0.76rem;
+}
+
+.pill-incomplete {
+  border-color: #efb8b0;
+  background: var(--cap-red-soft);
+  color: #972e24;
+}
+
+.pill-complete {
+  border-color: #a7d6ba;
+  background: var(--cap-green-soft);
+  color: var(--cap-green);
+}
+
+.action-chip {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
+.action-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.achievement-name {
+  color: var(--cap-blue-900);
+}
+
+.achievement-rank {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.cadet-actions {
+  margin-top: 10px;
+}
+
+.action-chip.exclude {
+  border-color: #dcb4af;
+  background: #fff5f3;
+  color: #8f2e23;
+}
+
+.action-chip.include {
+  border-color: #a7d6ba;
+  background: #effaf3;
+  color: var(--cap-green);
+}
+
+.excluded-list {
+  display: grid;
+  gap: 10px;
+}
+
+.paired-section .excluded-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.excluded-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
+}
+
+.excluded-meta strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--cap-blue-900);
+}
+
+.empty {
+  padding: 22px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.hidden {
+  display: none;
+}
+
+.site-footer {
+  padding: 0 32px 28px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.site-footer p {
+  margin: 0.3rem 0;
+}
+
+.site-footer a {
+  color: var(--cap-blue-700);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.site-footer a:hover,
+.site-footer a:focus {
+  text-decoration: underline;
+}
+
+@media (max-width: 1100px) {
+  .section-grid,
+  .controls,
+  .paired-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  header {
+    padding: 28px 20px 68px;
+  }
+
+  main {
+    padding: 0 18px 28px;
+  }
+
+  .site-footer {
+    padding: 0 18px 22px;
+  }
+
+  .card-heading,
+  .dashboard-topbar,
+  .file-drop-zone,
+  .excluded-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .upload-panel {
+    padding: 22px;
+  }
+
+  .section-tools {
+    justify-content: flex-start;
+  }
+}
+
+@media print {
+  header,
+  .upload-page,
+  .upload-grid,
+  .dashboard-topbar,
+  .status-banner,
+  .tabs,
+  .controls,
+  .action-chip {
+    display: none;
+  }
+
+  main {
+    padding: 0;
+  }
+
+  .card,
+  .stat {
+    box-shadow: none;
+  }
+
+  .table-wrap {
+    max-height: none;
+    overflow: visible;
+  }
+
+  body.printing-report {
+    background: #fff;
+  }
+
+  body.printing-report header,
+  body.printing-report main,
+  body.printing-report .site-footer {
+    display: none !important;
+  }
+
+  body.printing-report .print-report {
+    display: block;
+    padding: 0;
+  }
+
+  .print-report-header {
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #111;
+  }
+
+  .print-report-header h1 {
+    margin: 0 0 6px;
+    color: #111;
+    font-size: 20pt;
+  }
+
+  .print-report-header p {
+    margin: 0;
+    color: #333;
+    font-size: 10pt;
+  }
+
+  .print-section {
+    margin-bottom: 18px;
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .print-report-header + .print-section {
+    break-before: auto;
+    page-break-before: auto;
+  }
+
+  .print-section h2 {
+    margin: 0 0 7px;
+    color: #111;
+    font-size: 14pt;
+    break-after: avoid;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+
+  .print-table th,
+  .print-table td {
+    padding: 6px 8px;
+    border: 1px solid #777;
+    color: #111;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .print-table th {
+    background: #e8e8e8;
+    font-weight: 800;
+  }
+
+  .print-name-columns th,
+  .print-name-columns td {
+    width: 33.333%;
+  }
+
+  .print-table thead {
+    display: table-header-group;
+  }
+
+  .print-table tr {
+    break-inside: avoid;
+  }
+
+  .print-empty {
+    color: #555;
+    font-style: italic;
+  }
+}
+
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="header-title-row">
+      <h1>CAP Cadet Promotion Dashboard</h1>
+      <span class="version-badge">Version 0.3</span>
+    </div>
+    <p>Start by loading a cadet full-track report. The dashboard opens after a CSV or Excel workbook is parsed, then identifies overdue promotions, upcoming promotion dates, completed requirements, and missing items.</p>
+  </header>
+
+  <input id="cadetFile" class="visually-hidden" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
+
+  <main id="uploadPage" class="upload-page">
+    <section class="upload-gate">
+      <div class="upload-card upload-panel">
+        <span class="eyebrow">Report Upload</span>
+        <h2>Load Cadet Data</h2>
+        <p>CSV and Excel <code>.xlsx</code> reports are supported. Promotion requirements are built into the dashboard.</p>
+        <div id="uploadDropZone" class="file-drop-zone">
+          <div>
+            <strong>Select or Drop Report</strong>
+            <span id="uploadFileName">No file selected</span>
+          </div>
+          <button id="chooseFileButton" class="primary-button" type="button">Choose File</button>
+        </div>
+        <div id="uploadStatusMessage" data-status-message class="status-banner info" role="status">Upload a cadet full-track report to continue.</div>
+      </div>
+    </section>
+  </main>
+
+  <main id="dashboardPage" class="dashboard-page hidden">
+    <div class="dashboard-topbar">
+      <div>
+        <span class="eyebrow">Loaded Report</span>
+        <strong id="loadedReportName">No report loaded</strong>
+      </div>
+      <button id="uploadAnotherButton" class="secondary-button" type="button">Change Report</button>
+    </div>
+    <div id="dashboardStatusMessage" data-status-message class="status-banner info" role="status">Cadet report loaded.</div>
+
+    <nav class="tabs">
+      <button class="tab active" data-view="dashboard">Main Dashboard</button>
+      <button class="tab" data-view="all">All Promotions</button>
+      <button class="tab" data-view="milestones">Milestones, SDAs, Drill, & Uniform</button>
+      <button class="tab" data-view="requirements">Requirements Matrix</button>
+    </nav>
+
+    <section id="dashboardView">
+      <div class="stats" id="stats"></div>
+      <div class="section-grid">
+        <div class="card">
+          <div class="card-heading section-heading">
+            <h2>Overdue Promotions</h2>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Sort by</span>
+                <select id="overdueSort" class="dashboard-sort" data-section="overdue">
+                  <option value="dueDate">Due date</option>
+                  <option value="name">Name</option>
+                  <option value="rank">Rank</option>
+                  <option value="progress">Progress</option>
+                </select>
+              </label>
+              <span id="overdueCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="overdueTable"></table></div>
+        </div>
+        <div class="card">
+          <div class="card-heading section-heading">
+            <h2>Coming Up Soon</h2>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Sort by</span>
+                <select id="soonSort" class="dashboard-sort" data-section="soon">
+                  <option value="dueDate">Due date</option>
+                  <option value="name">Name</option>
+                  <option value="rank">Rank</option>
+                  <option value="progress">Progress</option>
+                </select>
+              </label>
+              <span id="soonCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="soonTable"></table></div>
+          <p class="note">“Soon” means due within the next 14 days. Change <code>SOON_DAYS</code> in the JavaScript if your squadron wants a different window.</p>
+        </div>
+        <div class="card">
+          <div class="card-heading section-heading">
+            <h2>Ready Promotions</h2>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Sort by</span>
+                <select id="readySort" class="dashboard-sort" data-section="ready">
+                  <option value="dueDate">Due date</option>
+                  <option value="name">Name</option>
+                  <option value="rank">Rank</option>
+                  <option value="progress">Progress</option>
+                </select>
+              </label>
+              <span id="readyCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="readyTable"></table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Main Dashboard Exclusions</h2>
+            <p class="note">Excluded cadets stay visible in All Promotions, but they are removed from main dashboard stats and priority tables until you re-add them.</p>
+          </div>
+          <span id="excludedCount" class="badge future">0 excluded</span>
+        </div>
+        <div id="excludedCadetsList" class="excluded-list"></div>
+      </div>
+    </section>
+
+    <section id="allView" class="hidden">
+      <div class="card">
+        <h2>All Cadet Promotions</h2>
+        <div class="controls">
+          <input id="searchInput" type="search" placeholder="Search name, CAPID, email, or achievement..." />
+          <select id="statusFilter">
+            <option value="all">All statuses</option>
+            <option value="Overdue">Overdue</option>
+            <option value="Due Soon">Due Soon</option>
+            <option value="Ready">Ready</option>
+            <option value="Not Ready">Not Ready</option>
+            <option value="Future">Future</option>
+          </select>
+          <select id="achievementFilter"><option value="all">All achievements</option></select>
+        </div>
+        <div class="table-wrap"><table id="allTable"></table></div>
+        <p class="note">Use the button below each cadet name to exclude them from the main dashboard or re-add them later.</p>
+      </div>
+    </section>
+
+    <section id="milestonesView" class="hidden">
+      <div class="print-toolbar">
+        <button id="printMilestonesButton" class="secondary-button" type="button">Print Milestones, SDAs, Drill & Uniform</button>
+      </div>
+
+      <div class="paired-section">
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Milestone Tests</h2>
+              <p class="note">Cadets currently working on Wright Brothers, Billy Mitchell, Amelia Earhart, Eaker, or Spaatz milestones. Use the summary buttons to bulk-exclude one milestone test from this page.</p>
+            </div>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Due</span>
+                <select id="milestoneDueSort" class="due-sort" data-table="milestone">
+                  <option value="dueAsc">Soonest first</option>
+                  <option value="dueDesc">Latest first</option>
+                </select>
+              </label>
+              <span id="milestoneCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div id="milestoneSummary" class="summary-grid"></div>
+          <div class="table-wrap"><table id="milestoneTable"></table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Milestone Exclusions</h2>
+              <p class="note">Excluded cadets stay off the milestone table until you re-add them.</p>
+            </div>
+            <span id="milestoneExcludedCount" class="badge future">0 excluded</span>
+          </div>
+          <div id="excludedMilestonesList" class="excluded-list"></div>
+        </div>
+      </div>
+
+      <div class="paired-section">
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>SDA Requirements</h2>
+              <p class="note">Cadets whose current achievement requires staff service, oral presentation, or technical writing SDA items.</p>
+            </div>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Due</span>
+                <select id="sdaDueSort" class="due-sort" data-table="sda">
+                  <option value="dueAsc">Soonest first</option>
+                  <option value="dueDesc">Latest first</option>
+                </select>
+              </label>
+              <span id="sdaCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="sdaTable"></table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>SDA Exclusions</h2>
+              <p class="note">Excluded cadets stay off the SDA table until you re-add them.</p>
+            </div>
+            <span id="sdaExcludedCount" class="badge future">0 excluded</span>
+          </div>
+          <div id="excludedSdasList" class="excluded-list"></div>
+        </div>
+      </div>
+
+      <div class="paired-section">
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Drill Tests</h2>
+              <p class="note">Cadets whose current achievement requires drill. This list is filtered separately from milestones and SDAs.</p>
+            </div>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Due</span>
+                <select id="drillDueSort" class="due-sort" data-table="drill">
+                  <option value="dueAsc">Soonest first</option>
+                  <option value="dueDesc">Latest first</option>
+                </select>
+              </label>
+              <span id="drillCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="controls">
+            <input id="drillSearchInput" type="search" placeholder="Search name, CAPID, email, or achievement..." />
+            <select id="drillStatusFilter">
+              <option value="needs">Needs drill test</option>
+              <option value="complete">Drill complete</option>
+              <option value="all">All drill-required cadets</option>
+            </select>
+            <select id="drillAchievementFilter"><option value="all">All achievements</option></select>
+          </div>
+          <div class="table-wrap"><table id="drillTable"></table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Drill Exclusions</h2>
+              <p class="note">Excluded cadets stay off the drill table until you re-add them.</p>
+            </div>
+            <span id="drillExcludedCount" class="badge future">0 excluded</span>
+          </div>
+          <div id="excludedDrillsList" class="excluded-list"></div>
+        </div>
+      </div>
+
+      <div class="paired-section">
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Uniform Tests</h2>
+              <p class="note">Cadets whose current achievement requires uniform inspection. This list is filtered separately from milestones, SDAs, and drill.</p>
+            </div>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Due</span>
+                <select id="uniformDueSort" class="due-sort" data-table="uniform">
+                  <option value="dueAsc">Soonest first</option>
+                  <option value="dueDesc">Latest first</option>
+                </select>
+              </label>
+              <span id="uniformCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="controls">
+            <input id="uniformSearchInput" type="search" placeholder="Search name, CAPID, email, or achievement..." />
+            <select id="uniformStatusFilter">
+              <option value="needs">Needs uniform test</option>
+              <option value="complete">Uniform complete</option>
+              <option value="all">All uniform-required cadets</option>
+            </select>
+            <select id="uniformAchievementFilter"><option value="all">All achievements</option></select>
+          </div>
+          <div class="table-wrap"><table id="uniformTable"></table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Uniform Exclusions</h2>
+              <p class="note">Excluded cadets stay off the uniform table until you re-add them.</p>
+            </div>
+            <span id="uniformExcludedCount" class="badge future">0 excluded</span>
+          </div>
+          <div id="excludedUniformsList" class="excluded-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="requirementsView" class="hidden">
+      <div class="card">
+        <h2>Promotion Requirements Matrix</h2>
+        <div class="table-wrap"><table id="requirementsTable"></table></div>
+        <p class="note">Blank or <code>None</code> cells mean that requirement is not required for that promotion in the built-in requirements file.</p>
+      </div>
+    </section>
+  </main>
+
+  <section id="milestonesPrintReport" class="print-report" aria-hidden="true"></section>
+
+  <footer class="site-footer">
+    <p>Made by Amit Sail for the Raritan Valley Composite Squadron.</p>
+    <p>Contact: <a href="mailto:amit.sail@njwg.cap.gov">amit.sail@njwg.cap.gov</a></p>
+  </footer>
+
+<script>
+const SOON_DAYS = 14;
+const EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-cadets-v1';
+const MILESTONE_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-milestones-v1';
+const SDA_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-sdas-v1';
+const DRILL_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-drills-v1';
+const UNIFORM_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-uniforms-v1';
+const DASHBOARD_SORT_DEFAULT = 'dueDate';
+const DUE_SORT_DEFAULT = 'dueAsc';
+const MILESTONE_ACHIEVEMENTS = [
+  { achievement: 'Wright Brothers', label: 'Wright Brothers' },
+  { achievement: 'Billy Mitchell', label: 'Mitchell' },
+  { achievement: 'Amelia Earhart', label: 'Amelia' },
+  { achievement: 'Gen Ira C Eaker', label: 'Eaker' },
+  { achievement: 'Gen Carl A Spaatz', label: 'Spaatz' }
+];
+const SDA_REQUIREMENTS = [
+  { requirementField: 'SDAStaffServiceDate', sourceField: 'StaffServiceDate', label: 'Staff Service' },
+  { requirementField: 'SDAOralPresentationDate', sourceField: 'OralPresentationDate', label: 'Oral Presentation' },
+  { requirementField: 'SDATechnicalWritingAssignmentDate', sourceField: 'TechnicalWritingAssignmentDate', label: 'Writing Date' },
+  { requirementField: 'SDATechnicalWritingAssignment', sourceField: 'TechnicalWritingAssignment', label: 'Writing Assignment' }
+];
+const SDA_DISPLAY_REQUIREMENTS = SDA_REQUIREMENTS.filter(item => item.label !== 'Writing Assignment');
+const MILESTONE_DISPLAY_CHECKS = [
+  { sourceName: 'Physical Fitness', label: 'Physical Fitness' },
+  { sourceName: 'Drill', label: 'Drill' },
+  { sourceName: 'Leadership Test or Module', label: 'Leadership Test' },
+  { sourceName: 'Aerospace Test or Module', label: 'Aerospace Test' },
+  { sourceName: 'Uniform', label: 'Uniform' }
+];
+const BUILT_IN_REQUIREMENTS_CSV = `Achievement,Rank,Physical Fitness,Leadership,Drill,Aerospace Education,Character Development,Active Participation,Cadet Oath,Uniform,Leadership Expectations,Special Activity,SDAStaffServiceDate,SDAOralPresentationDate,SDATechnicalWritingAssignmentDate,SDATechnicalWritingAssignment
+Achievement 1,C/Amn,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Cadet Welcome Course,None,None,None,None
+Achievement 2,C/A1C,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
+Achievement 3,C/SrA,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
+Wright Brothers,C/SSgt,Pass,Pass,Pass,None,None,Pass,Pass,Pass,Pass,None,None,None,None,None
+Achievement 4,C/TSgt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
+Achievement 5,C/MSgt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
+Achievement 6,C/SMSgt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
+Achievement 7,C/CMSgt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
+Achievement 8,C/CMSgt',Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Essay & Speech,None,None,None,None
+Billy Mitchell,C/2d Lt,Pass,Pass,None,Pass,None,Pass,Pass,Pass,Pass,Encampment,None,None,None,None
+Achievement 9,C/2d Lt',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
+Achievement 10,C/1st Lt,Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
+Achievement 11,C/1st Lt',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
+Amelia Earhart,C/Capt,Pass,Pass,None,None,None,Pass,Pass,Pass,Pass,None,None,None,None,None
+Achievement 12,C/Capt',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
+Achievement 13,C/Capt'',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
+Achievement 14,C/Maj,Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
+Achievement 15,C/Maj',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
+Achievement 16,C/Maj'',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
+Gen Ira C Eaker,C/Lt Col,Pass,None,None,None,None,Pass,Pass,Pass,Pass,"Officer Leadership Course, Speech, & Essay",None,None,None,None
+Gen Carl A Spaatz,C/Col,Pass,Pass,None,Pass,None,Pass,Pass,Pass,Pass,None,None,None,None,None`;
+
+let cadets = [];
+let requirements = parseCSV(BUILT_IN_REQUIREMENTS_CSV);
+let excludedCadetKeys = loadExcludedCadets();
+let excludedMilestoneKeys = loadMilestoneExclusions();
+let excludedSdaKeys = loadSdaExclusions();
+let excludedDrillKeys = loadDrillExclusions();
+let excludedUniformKeys = loadUniformExclusions();
+let loadedFileName = '';
+let dashboardSorts = {
+  overdue: DASHBOARD_SORT_DEFAULT,
+  soon: DASHBOARD_SORT_DEFAULT,
+  ready: DASHBOARD_SORT_DEFAULT
+};
+let dueSorts = {
+  milestone: DUE_SORT_DEFAULT,
+  sda: DUE_SORT_DEFAULT,
+  drill: DUE_SORT_DEFAULT,
+  uniform: DUE_SORT_DEFAULT
+};
+
+const dateFormatter = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric'
+});
+const today = startOfDay(new Date());
+
+const cadetFileInput = document.getElementById('cadetFile');
+const uploadPage = document.getElementById('uploadPage');
+const dashboardPage = document.getElementById('dashboardPage');
+const uploadDropZone = document.getElementById('uploadDropZone');
+const uploadFileName = document.getElementById('uploadFileName');
+const loadedReportName = document.getElementById('loadedReportName');
+
+cadetFileInput.addEventListener('change', handleCadetFileChange);
+document.getElementById('chooseFileButton').addEventListener('click', () => cadetFileInput.click());
+document.getElementById('uploadAnotherButton').addEventListener('click', () => cadetFileInput.click());
+document.addEventListener('click', handleActionClick);
+uploadDropZone.addEventListener('dragenter', handleUploadDrag);
+uploadDropZone.addEventListener('dragover', handleUploadDrag);
+uploadDropZone.addEventListener('dragleave', handleUploadDrag);
+uploadDropZone.addEventListener('drop', handleUploadDrop);
+
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('dashboardView').classList.toggle('hidden', btn.dataset.view !== 'dashboard');
+  document.getElementById('allView').classList.toggle('hidden', btn.dataset.view !== 'all');
+  document.getElementById('milestonesView').classList.toggle('hidden', btn.dataset.view !== 'milestones');
+  document.getElementById('requirementsView').classList.toggle('hidden', btn.dataset.view !== 'requirements');
+}));
+
+document.getElementById('searchInput').addEventListener('input', renderAllCadets);
+document.getElementById('statusFilter').addEventListener('change', renderAllCadets);
+document.getElementById('achievementFilter').addEventListener('change', renderAllCadets);
+document.getElementById('drillSearchInput').addEventListener('input', renderDrillTests);
+document.getElementById('drillStatusFilter').addEventListener('change', renderDrillTests);
+document.getElementById('drillAchievementFilter').addEventListener('change', renderDrillTests);
+document.getElementById('uniformSearchInput').addEventListener('input', renderUniformTests);
+document.getElementById('uniformStatusFilter').addEventListener('change', renderUniformTests);
+document.getElementById('uniformAchievementFilter').addEventListener('change', renderUniformTests);
+document.getElementById('printMilestonesButton').addEventListener('click', handlePrintMilestonesReport);
+window.addEventListener('afterprint', () => document.body.classList.remove('printing-report'));
+document.querySelectorAll('.dashboard-sort').forEach(select => {
+  select.value = dashboardSorts[select.dataset.section] || DASHBOARD_SORT_DEFAULT;
+  select.addEventListener('change', handleDashboardSortChange);
+});
+document.querySelectorAll('.due-sort').forEach(select => {
+  select.value = dueSorts[select.dataset.table] || DUE_SORT_DEFAULT;
+  select.addEventListener('change', handleDueSortChange);
+});
+
+async function handleCadetFileChange(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  await processCadetFile(file);
+  event.target.value = '';
+}
+
+async function processCadetFile(file) {
+  const previousCadets = cadets;
+  const previousFileName = loadedFileName;
+  setSelectedFileName(file.name);
+
+  try {
+    setStatusMessage(`Loading ${file.name}...`, 'info');
+    const rows = await loadCadetRows(file);
+    validateCadetRows(rows);
+    cadets = rows.map(analyzeCadet);
+    loadedFileName = file.name;
+    populateAchievementFilter();
+    populateDrillAchievementFilter();
+    populateUniformAchievementFilter();
+    renderAll();
+    showDashboard();
+
+    const visibleCount = getDashboardCadets().length;
+    setStatusMessage(
+      `${cadets.length} cadets loaded from ${file.name}. ${visibleCount} currently shown on the main dashboard.`,
+      'success'
+    );
+  } catch (error) {
+    console.error(error);
+    cadets = previousCadets;
+    loadedFileName = previousFileName;
+    populateAchievementFilter();
+    populateDrillAchievementFilter();
+    populateUniformAchievementFilter();
+    renderAll();
+    if (cadets.length) {
+      showDashboard();
+    } else {
+      showUploadPage();
+    }
+    setStatusMessage(error.message || 'Unable to read that report.', 'error');
+  }
+}
+
+function handleUploadDrag(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  uploadDropZone.classList.toggle('drag-over', event.type === 'dragenter' || event.type === 'dragover');
+}
+
+async function handleUploadDrop(event) {
+  handleUploadDrag(event);
+  const file = event.dataTransfer.files[0];
+  if (file) await processCadetFile(file);
+}
+
+async function loadCadetRows(file) {
+  const lowerName = clean(file.name).toLowerCase();
+
+  if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
+    if (!window.XLSX) {
+      throw new Error('Excel support did not load. Refresh the page and try again, or upload a CSV export.');
+    }
+
+    const workbook = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const firstSheet = workbook.SheetNames[0];
+    if (!firstSheet) {
+      throw new Error('The uploaded workbook does not contain any sheets.');
+    }
+
+    const csvText = window.XLSX.utils.sheet_to_csv(workbook.Sheets[firstSheet], { blankrows: false });
+    return parseCSV(csvText);
+  }
+
+  if (lowerName.endsWith('.csv')) {
+    return parseCSV(await file.text());
+  }
+
+  throw new Error('Upload a cadet full-track report in CSV or XLSX format.');
+}
+
+function validateCadetRows(rows) {
+  if (!rows.length) {
+    throw new Error('That file did not contain any cadet rows.');
+  }
+
+  const headers = new Set(Object.keys(rows[0]).map(header => clean(header)));
+  const hasCadetName = headers.has('NameFirst') || headers.has('NameLast');
+
+  if (!headers.has('AchvName') || !headers.has('CAPID') || !hasCadetName) {
+    throw new Error('That file does not look like a cadet full-track report. Upload the export with CAPID, cadet name, and achievement columns.');
+  }
+}
+
+function handleActionClick(event) {
+  const button = event.target.closest('button[data-action]');
+  if (!button || button.disabled) return;
+
+  const action = clean(button.dataset.action);
+  if (action === 'bulk-exclude-milestone') {
+    bulkExcludeMilestone(button.dataset.achievement);
+    return;
+  }
+
+  if (action === 'bulk-include-milestone') {
+    bulkIncludeMilestone(button.dataset.achievement);
+    return;
+  }
+
+  const key = clean(button.dataset.key);
+  if (!key) return;
+
+  if (action === 'exclude') {
+    excludedCadetKeys.add(key);
+    persistExcludedCadets();
+    renderAll();
+    setStatusMessage('Cadet excluded from the main dashboard.', 'info');
+    return;
+  }
+
+  if (action === 'include') {
+    excludedCadetKeys.delete(key);
+    persistExcludedCadets();
+    renderAll();
+    setStatusMessage('Cadet re-added to the main dashboard.', 'success');
+    return;
+  }
+
+  if (action === 'exclude-milestone') {
+    excludedMilestoneKeys.add(key);
+    persistMilestoneExclusions();
+    renderAll();
+    setStatusMessage('Cadet excluded from milestone tests.', 'info');
+    return;
+  }
+
+  if (action === 'include-milestone') {
+    excludedMilestoneKeys.delete(key);
+    persistMilestoneExclusions();
+    renderAll();
+    setStatusMessage('Cadet re-added to milestone tests.', 'success');
+    return;
+  }
+
+  if (action === 'exclude-sda') {
+    excludedSdaKeys.add(key);
+    persistSdaExclusions();
+    renderAll();
+    setStatusMessage('Cadet excluded from SDA requirements.', 'info');
+    return;
+  }
+
+  if (action === 'include-sda') {
+    excludedSdaKeys.delete(key);
+    persistSdaExclusions();
+    renderAll();
+    setStatusMessage('Cadet re-added to SDA requirements.', 'success');
+    return;
+  }
+
+  if (action === 'exclude-drill') {
+    excludedDrillKeys.add(key);
+    persistDrillExclusions();
+    renderAll();
+    setStatusMessage('Cadet excluded from drill tests.', 'info');
+    return;
+  }
+
+  if (action === 'include-drill') {
+    excludedDrillKeys.delete(key);
+    persistDrillExclusions();
+    renderAll();
+    setStatusMessage('Cadet re-added to drill tests.', 'success');
+    return;
+  }
+
+  if (action === 'exclude-uniform') {
+    excludedUniformKeys.add(key);
+    persistUniformExclusions();
+    renderAll();
+    setStatusMessage('Cadet excluded from uniform tests.', 'info');
+    return;
+  }
+
+  if (action === 'include-uniform') {
+    excludedUniformKeys.delete(key);
+    persistUniformExclusions();
+    renderAll();
+    setStatusMessage('Cadet re-added to uniform tests.', 'success');
+  }
+}
+
+function bulkExcludeMilestone(achievement) {
+  const visibleRows = getVisibleMilestoneCadets()
+    .filter(cadet => clean(cadet.achievement).toLowerCase() === clean(achievement).toLowerCase());
+
+  if (!visibleRows.length) {
+    setStatusMessage('No shown cadets are available to exclude for that milestone.', 'info');
+    return;
+  }
+
+  visibleRows.forEach(cadet => excludedMilestoneKeys.add(cadet.key));
+  persistMilestoneExclusions();
+  renderAll();
+  setStatusMessage(`${formatCadetCount(visibleRows.length)} excluded from ${milestoneLabel(achievement) || achievement}.`, 'info');
+}
+
+function bulkIncludeMilestone(achievement) {
+  const excludedRows = getExcludedMilestoneCadets()
+    .filter(cadet => clean(cadet.achievement).toLowerCase() === clean(achievement).toLowerCase());
+
+  if (!excludedRows.length) {
+    setStatusMessage('No excluded cadets are available to re-add for that milestone.', 'info');
+    return;
+  }
+
+  excludedRows.forEach(cadet => excludedMilestoneKeys.delete(cadet.key));
+  persistMilestoneExclusions();
+  renderAll();
+  setStatusMessage(`${formatCadetCount(excludedRows.length)} re-added to ${milestoneLabel(achievement) || achievement}.`, 'success');
+}
+
+function handleDashboardSortChange(event) {
+  const section = clean(event.target.dataset.section);
+  if (!section) return;
+
+  dashboardSorts[section] = event.target.value || DASHBOARD_SORT_DEFAULT;
+  renderDashboardTables();
+}
+
+function handleDueSortChange(event) {
+  const table = clean(event.target.dataset.table);
+  if (!table) return;
+
+  dueSorts[table] = event.target.value || DUE_SORT_DEFAULT;
+  if (table === 'drill') {
+    renderDrillTests();
+    return;
+  }
+
+  if (table === 'uniform') {
+    renderUniformTests();
+    return;
+  }
+
+  renderMilestonesAndSdas();
+}
+
+function handlePrintMilestonesReport() {
+  renderPrintableMilestonesReport();
+  document.body.classList.add('printing-report');
+  window.print();
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let inQuotes = false;
+
+  text = text.replace(/^\uFEFF/, '');
+
+  for (let i = 0; i < text.length; i += 1) {
+    const current = text[i];
+    const next = text[i + 1];
+
+    if (current === '"' && inQuotes && next === '"') {
+      cell += '"';
+      i += 1;
+    } else if (current === '"') {
+      inQuotes = !inQuotes;
+    } else if (current === ',' && !inQuotes) {
+      row.push(cell.trim());
+      cell = '';
+    } else if ((current === '\n' || current === '\r') && !inQuotes) {
+      if (current === '\r' && next === '\n') i += 1;
+      row.push(cell.trim());
+      if (row.some(value => value !== '')) rows.push(row);
+      row = [];
+      cell = '';
+    } else {
+      cell += current;
+    }
+  }
+
+  if (cell || row.length) {
+    row.push(cell.trim());
+    if (row.some(value => value !== '')) rows.push(row);
+  }
+
+  if (!rows.length) return [];
+
+  const headers = rows[0].map(header => header.trim());
+  return rows.slice(1).map(values => Object.fromEntries(
+    headers.map((header, index) => [header, (values[index] ?? '').trim()])
+  ));
+}
+
+function analyzeCadet(raw) {
+  const achievement = clean(raw.AchvName);
+  const requirementRow = findRequirementForAchievement(achievement);
+  const rank = clean(requirementRow.Rank || requirementRow.Grade);
+  const rankOrder = achievementOrder(achievement);
+  const dueDate = parseDate(raw.NextApprovalDate) || addDays(parseDate(raw.AprDate) || parseDate(raw.JoinDate), 56);
+  const checks = buildChecks(raw, requirementRow);
+  const completed = checks.filter(check => check.done).length;
+  const total = checks.length || 1;
+  const missing = checks.filter(check => !check.done).map(check => check.name);
+  const daysUntil = dueDate ? Math.ceil((startOfDay(dueDate) - today) / 86400000) : null;
+  const ready = missing.length === 0;
+
+  let status = 'Future';
+  if (ready) status = 'Ready';
+  else if (daysUntil !== null && daysUntil < 0) status = 'Overdue';
+  else if (daysUntil !== null && daysUntil <= SOON_DAYS) status = 'Due Soon';
+  else status = 'Not Ready';
+
+  return {
+    raw,
+    key: cadetKey(raw),
+    capid: raw.CAPID,
+    name: `${clean(raw.NameFirst)} ${clean(raw.NameLast)}`.trim(),
+    email: raw.Email,
+    achievement,
+    rank,
+    rankOrder,
+    milestoneLabel: milestoneLabel(achievement),
+    dueDate,
+    daysUntil,
+    status,
+    ready,
+    checks,
+    completed,
+    total,
+    missing,
+    progress: Math.round((completed / total) * 100)
+  };
+}
+
+function findRequirementForAchievement(achievement) {
+  return requirements.find(row => clean(row.Achievement).toLowerCase() === clean(achievement).toLowerCase()) || {};
+}
+
+function buildChecks(cadet, requirementRow) {
+  const checks = [];
+  addCheck(checks, requirementRow['Physical Fitness'], 'Physical Fitness', hasValue(cadet.PhyFitTest));
+  addCheck(
+    checks,
+    requirementRow.Leadership,
+    'Leadership Test or Module',
+    passScore(cadet.LeadLabDateP, cadet.LeadLabScore) || hasValue(cadet.LeadershipInteractiveDate)
+  );
+  addCheck(checks, requirementRow.Drill, 'Drill', hasValue(cadet.DrillDate) && number(cadet.DrillScore) > 0);
+  addCheck(
+    checks,
+    requirementRow['Aerospace Education'],
+    'Aerospace Test or Module',
+    passScore(cadet.AEDateP, cadet.AEScore) || hasValue(cadet.AEInteractiveDate)
+  );
+  addCheck(checks, requirementRow['Character Development'], 'Character Development', hasValue(cadet.CharacterDevelopment));
+  addCheck(
+    checks,
+    requirementRow['Active Participation'],
+    'Active Participation',
+    truthy(cadet.ActivePart) || hasValue(cadet.ActiveParticipationDate)
+  );
+  addCheck(checks, requirementRow['Cadet Oath'], 'Cadet Oath', truthy(cadet.CadetOath) || hasValue(cadet.CadetOathDate));
+  addCheck(checks, requirementRow.Uniform, 'Uniform', hasValue(cadet.UniformDate));
+  addCheck(
+    checks,
+    requirementRow['Leadership Expectations'],
+    'Leadership Expectations',
+    hasValue(cadet.LeadershipExpectationsDate)
+  );
+  addSpecialActivity(checks, requirementRow['Special Activity'], cadet);
+  addCheck(checks, requirementRow.SDAStaffServiceDate, 'SDA Staff Service', hasValue(cadet.StaffServiceDate));
+  addCheck(checks, requirementRow.SDAOralPresentationDate, 'SDA Oral Presentation', hasValue(cadet.OralPresentationDate));
+  addCheck(
+    checks,
+    requirementRow.SDATechnicalWritingAssignmentDate,
+    'SDA Technical Writing Date',
+    hasValue(cadet.TechnicalWritingAssignmentDate)
+  );
+  addCheck(
+    checks,
+    requirementRow.SDATechnicalWritingAssignment,
+    'SDA Technical Writing Assignment',
+    hasValue(cadet.TechnicalWritingAssignment)
+  );
+  return checks;
+}
+
+function addCheck(checks, requirementValue, name, done) {
+  if (hasValue(requirementValue)) checks.push({ name, done });
+}
+
+function addSpecialActivity(checks, requirementValue, cadet) {
+  if (!hasValue(requirementValue)) return;
+
+  const normalized = requirementValue.toLowerCase();
+  if (normalized.includes('welcome')) {
+    checks.push({ name: 'Cadet Welcome Course', done: hasValue(cadet.WelcomeCourseDate) });
+  } else if (normalized.includes('essay') && normalized.includes('speech') && normalized.includes('officer')) {
+    checks.push({ name: 'Officer Leadership Course / Special Activity', done: hasValue(cadet.SpecialActivityDate) });
+  } else if (normalized.includes('essay') && normalized.includes('speech')) {
+    checks.push({ name: 'Essay', done: hasValue(cadet.EssayDate) });
+    checks.push({ name: 'Speech', done: hasValue(cadet.SpeechDate) });
+  } else if (normalized.includes('encampment')) {
+    checks.push({ name: 'Encampment', done: hasValue(cadet.SpecialActivityDate) });
+  } else {
+    checks.push({ name: requirementValue, done: hasValue(cadet.SpecialActivityDate) });
+  }
+}
+
+function renderAll() {
+  renderStats();
+  renderDashboardTables();
+  renderAllCadets();
+  renderMilestonesAndSdas();
+  renderDrillTests();
+  renderUniformTests();
+  renderExcludedCadets();
+  renderRequirements();
+}
+
+function renderStats() {
+  const dashboardCadets = getDashboardCadets();
+  const excludedLoadedCadets = getExcludedLoadedCadets();
+  const stats = [
+    ['Cadets Loaded', cadets.length],
+    ['Shown on Dashboard', dashboardCadets.length],
+    ['Excluded', excludedLoadedCadets.length],
+    ['Overdue', dashboardCadets.filter(cadet => cadet.status === 'Overdue').length],
+    ['Due Soon', dashboardCadets.filter(cadet => cadet.status === 'Due Soon').length],
+    ['Ready Now', dashboardCadets.filter(cadet => cadet.status === 'Ready').length],
+    ['Avg. Complete', dashboardCadets.length ? `${Math.round(dashboardCadets.reduce((sum, cadet) => sum + cadet.progress, 0) / dashboardCadets.length)}%` : '0%']
+  ];
+
+  document.getElementById('stats').innerHTML = stats
+    .map(([label, value]) => `<div class="stat"><div class="num">${value}</div><div class="label">${label}</div></div>`)
+    .join('');
+}
+
+function renderDashboardTables() {
+  const dashboardCadets = getDashboardCadets();
+  const noDashboardCadets = cadets.length && !dashboardCadets.length;
+  const overdue = sortDashboardRows(
+    dashboardCadets.filter(cadet => cadet.status === 'Overdue'),
+    dashboardSorts.overdue
+  );
+  const soon = sortDashboardRows(
+    dashboardCadets.filter(cadet => cadet.status === 'Due Soon'),
+    dashboardSorts.soon
+  );
+  const ready = sortDashboardRows(
+    dashboardCadets.filter(cadet => cadet.status === 'Ready'),
+    dashboardSorts.ready
+  );
+
+  setSectionCount('overdueCount', overdue.length);
+  setSectionCount('soonCount', soon.length);
+  setSectionCount('readyCount', ready.length);
+
+  renderCadetTable(document.getElementById('overdueTable'), overdue, {
+    compact: true,
+    emptyMessage: noDashboardCadets ? 'All loaded cadets are currently excluded from the main dashboard.' : 'No overdue cadets.'
+  });
+  renderCadetTable(document.getElementById('soonTable'), soon, {
+    compact: true,
+    emptyMessage: noDashboardCadets ? 'All loaded cadets are currently excluded from the main dashboard.' : 'No cadets are due soon.'
+  });
+  renderCadetTable(document.getElementById('readyTable'), ready, {
+    compact: true,
+    emptyMessage: noDashboardCadets ? 'All loaded cadets are currently excluded from the main dashboard.' : 'No cadets are ready now.'
+  });
+}
+
+function sortDashboardRows(rows, sortKey = DASHBOARD_SORT_DEFAULT) {
+  const sorted = [...rows];
+
+  sorted.sort((left, right) => {
+    if (sortKey === 'name') {
+      return compareText(left.name, right.name) || compareDueDate(left, right);
+    }
+
+    if (sortKey === 'rank') {
+      return compareRank(left, right) || compareText(left.name, right.name);
+    }
+
+    if (sortKey === 'progress') {
+      return (right.progress - left.progress) || compareDueDate(left, right) || compareText(left.name, right.name);
+    }
+
+    return compareDueDate(left, right) || compareText(left.name, right.name);
+  });
+
+  return sorted;
+}
+
+function sortPromotionRows(rows) {
+  return [...rows].sort((left, right) =>
+    compareRank(left, right) || compareDueDate(left, right) || compareText(left.name, right.name)
+  );
+}
+
+function sortDueRows(rows, direction = DUE_SORT_DEFAULT) {
+  return [...rows].sort((left, right) =>
+    compareDueDateWithDirection(left, right, direction) || compareRank(left, right) || compareText(left.name, right.name)
+  );
+}
+
+function renderAllCadets() {
+  let rows = [...cadets];
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const achievement = document.getElementById('achievementFilter').value;
+
+  if (query) {
+    rows = rows.filter(cadet =>
+      [cadet.name, cadet.capid, cadet.email, cadet.achievement].join(' ').toLowerCase().includes(query)
+    );
+  }
+  if (status !== 'all') rows = rows.filter(cadet => cadet.status === status);
+  if (achievement !== 'all') rows = rows.filter(cadet => cadet.achievement === achievement);
+
+  rows.sort((left, right) => (left.dueDate || 0) - (right.dueDate || 0));
+  renderCadetTable(document.getElementById('allTable'), rows, {
+    compact: false,
+    emptyMessage: 'No cadets match this view.'
+  });
+}
+
+function renderMilestonesAndSdas() {
+  const allMilestoneRows = getMilestoneRows();
+  const milestoneRows = getVisibleMilestoneRows();
+  const allSdaRows = getSdaRows();
+  const sdaRows = getVisibleSdaRows();
+  const excludedMilestones = getExcludedMilestoneCadets();
+  const excludedSdas = getExcludedSdaCadets();
+
+  setSectionCount('milestoneCount', milestoneRows.length);
+  setSectionCount('sdaCount', sdaRows.length);
+  document.getElementById('milestoneExcludedCount').textContent = `${excludedMilestones.length} excluded`;
+  document.getElementById('sdaExcludedCount').textContent = `${excludedSdas.length} excluded`;
+  renderMilestoneSummary(milestoneRows, allMilestoneRows);
+  renderMilestoneTable(document.getElementById('milestoneTable'), milestoneRows, allMilestoneRows.length);
+  renderSdaTable(document.getElementById('sdaTable'), sdaRows, allSdaRows.length);
+  renderMilestoneSdaExclusions(excludedMilestones, excludedSdas);
+}
+
+function renderMilestoneSummary(rows, allRows) {
+  const container = document.getElementById('milestoneSummary');
+  container.innerHTML = MILESTONE_ACHIEVEMENTS
+    .map(milestone => {
+      const count = rows.filter(cadet => clean(cadet.achievement).toLowerCase() === milestone.achievement.toLowerCase()).length;
+      const totalCount = allRows.filter(cadet => clean(cadet.achievement).toLowerCase() === milestone.achievement.toLowerCase()).length;
+      const excludedCount = totalCount - count;
+      const action = count ? 'bulk-exclude-milestone' : 'bulk-include-milestone';
+      const buttonLabel = totalCount ? (count ? 'Exclude All Shown' : 'Re-add Excluded') : 'No Cadets';
+      const buttonClass = count ? 'exclude' : 'include';
+      const disabled = totalCount ? '' : 'disabled';
+      return `<div class="summary-card">
+        <div class="summary-num">${count}</div>
+        <div class="summary-label">${esc(milestone.label)}${excludedCount ? ` | ${excludedCount} excluded` : ''}</div>
+        <button class="action-chip ${buttonClass}" type="button" data-action="${action}" data-achievement="${esc(milestone.achievement)}" ${disabled}>${buttonLabel}</button>
+      </div>`;
+    })
+    .join('');
+}
+
+function renderMilestoneTable(table, rows, totalRows) {
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to see milestone tests.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = `<tr><td class="empty">${totalRows ? 'All loaded milestone cadets are currently excluded.' : 'No loaded cadets are currently working on milestone tests.'}</td></tr>`;
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>Cadet</th>
+      <th>Milestone</th>
+      <th>Due</th>
+      <th>Status</th>
+      <th>Progress</th>
+      <th>Requirements</th>
+    </tr></thead><tbody>` +
+    rows.map(cadet => `<tr>
+      <td>
+        <strong>${esc(cadet.name || 'Unknown')}</strong><br>
+        <span class="note">CAPID ${esc(cadet.capid || '')}</span>
+        <div class="cadet-actions"><button class="action-chip exclude" type="button" data-action="exclude-milestone" data-key="${esc(cadet.key)}">Exclude</button></div>
+      </td>
+      <td><strong class="achievement-name">${esc(cadet.achievement)}</strong>${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}</td>
+      <td>${formatDate(cadet.dueDate)}<br><span class="note">${daysText(cadet.daysUntil)}</span></td>
+      <td><span class="badge ${statusClass(cadet.status)}">${cadet.status}</span></td>
+      <td><span class="progress"><span style="width:${cadet.progress}%"></span></span>${cadet.completed}/${cadet.total}</td>
+      <td><div class="missing-list">${renderMilestoneRequirements(cadet)}</div></td>
+    </tr>`).join('') +
+    '</tbody>';
+}
+
+function renderSdaTable(table, rows, totalRows) {
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to see SDA requirements.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = `<tr><td class="empty">${totalRows ? 'All loaded SDA cadets are currently excluded.' : 'No loaded cadets currently have SDA requirements.'}</td></tr>`;
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>Cadet</th>
+      <th>Achievement</th>
+      <th>Due</th>
+      ${SDA_DISPLAY_REQUIREMENTS.map(item => `<th>${esc(item.label)}</th>`).join('')}
+    </tr></thead><tbody>` +
+    rows.map(cadet => `<tr>
+      <td>
+        <strong>${esc(cadet.name || 'Unknown')}</strong><br>
+        <span class="note">CAPID ${esc(cadet.capid || '')}</span>
+        <div class="cadet-actions"><button class="action-chip exclude" type="button" data-action="exclude-sda" data-key="${esc(cadet.key)}">Exclude</button></div>
+      </td>
+      <td><strong class="achievement-name">${esc(cadet.achievement || 'Unknown')}</strong>${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}</td>
+      <td>${formatDate(cadet.dueDate)}<br><span class="note">${daysText(cadet.daysUntil)}</span></td>
+      ${SDA_DISPLAY_REQUIREMENTS.map(item => `<td>${renderSdaCell(cadet, item)}</td>`).join('')}
+    </tr>`).join('') +
+    '</tbody>';
+}
+
+function renderSdaCell(cadet, item) {
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  const required = hasValue(requirementRow[item.requirementField]);
+  if (!required) return '<span class="badge future">Not required</span>';
+
+  const value = clean(cadet.raw[item.sourceField]);
+  const done = hasValue(value);
+  const detail = done ? `<span class="cell-detail">${esc(value)}</span>` : '';
+  return `<span class="badge ${done ? 'ready' : 'overdue'}">${done ? 'Complete' : 'Missing'}</span>${detail}`;
+}
+
+function renderMilestoneRequirements(cadet) {
+  const displayChecks = MILESTONE_DISPLAY_CHECKS
+    .map(item => {
+      const check = cadet.checks.find(candidate => candidate.name === item.sourceName);
+      return check ? { ...check, name: item.label } : null;
+    })
+    .filter(Boolean);
+
+  if (!displayChecks.length) return '<span class="badge future">No tracked items</span>';
+
+  return displayChecks
+    .map(check => `<span class="pill ${check.done ? 'pill-complete' : 'pill-incomplete'}">${esc(check.name)}</span>`)
+    .join('');
+}
+
+function renderDrillTests() {
+  const rows = getVisibleDrillRows();
+  const excludedDrills = getExcludedDrillCadets();
+
+  setSectionCount('drillCount', rows.length);
+  document.getElementById('drillExcludedCount').textContent = `${excludedDrills.length} excluded`;
+  renderDrillTable(document.getElementById('drillTable'), rows);
+  renderDrillExclusions(excludedDrills);
+}
+
+function renderDrillTable(table, rows) {
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to see drill tests.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = '<tr><td class="empty">No cadets match the drill test filters.</td></tr>';
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>Cadet</th>
+      <th>Achievement</th>
+      <th>Due</th>
+      <th>Drill Status</th>
+    </tr></thead><tbody>` +
+    rows.map(cadet => `<tr>
+      <td>
+        <strong>${esc(cadet.name || 'Unknown')}</strong><br>
+        <span class="note">CAPID ${esc(cadet.capid || '')}</span>
+        <div class="cadet-actions"><button class="action-chip exclude" type="button" data-action="exclude-drill" data-key="${esc(cadet.key)}">Exclude</button></div>
+      </td>
+      <td><strong class="achievement-name">${esc(cadet.achievement || 'Unknown')}</strong>${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}</td>
+      <td>${formatDate(cadet.dueDate)}<br><span class="note">${daysText(cadet.daysUntil)}</span></td>
+      <td>${renderDrillStatus(cadet)}</td>
+    </tr>`).join('') +
+    '</tbody>';
+}
+
+function renderDrillStatus(cadet) {
+  return hasCompleteDrillTest(cadet)
+    ? '<span class="badge ready">Complete</span>'
+    : '<span class="badge overdue">Needs Drill</span>';
+}
+
+function renderDrillExclusions(drillRows) {
+  renderScopedExclusionList({
+    containerId: 'excludedDrillsList',
+    rows: drillRows,
+    emptyMessage: 'No cadets are excluded from drill tests.',
+    noDataMessage: 'Upload a cadet report to manage drill exclusions.',
+    action: 'include-drill',
+    buttonLabel: 'Re-add to Drills'
+  });
+}
+
+function renderUniformTests() {
+  const rows = getVisibleUniformRows();
+  const excludedUniforms = getExcludedUniformCadets();
+
+  setSectionCount('uniformCount', rows.length);
+  document.getElementById('uniformExcludedCount').textContent = `${excludedUniforms.length} excluded`;
+  renderUniformTable(document.getElementById('uniformTable'), rows);
+  renderUniformExclusions(excludedUniforms);
+}
+
+function renderUniformTable(table, rows) {
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to see uniform tests.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = '<tr><td class="empty">No cadets match the uniform test filters.</td></tr>';
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>Cadet</th>
+      <th>Achievement</th>
+      <th>Due</th>
+      <th>Uniform Status</th>
+    </tr></thead><tbody>` +
+    rows.map(cadet => `<tr>
+      <td>
+        <strong>${esc(cadet.name || 'Unknown')}</strong><br>
+        <span class="note">CAPID ${esc(cadet.capid || '')}</span>
+        <div class="cadet-actions"><button class="action-chip exclude" type="button" data-action="exclude-uniform" data-key="${esc(cadet.key)}">Exclude</button></div>
+      </td>
+      <td><strong class="achievement-name">${esc(cadet.achievement || 'Unknown')}</strong>${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}</td>
+      <td>${formatDate(cadet.dueDate)}<br><span class="note">${daysText(cadet.daysUntil)}</span></td>
+      <td>${renderUniformStatus(cadet)}</td>
+    </tr>`).join('') +
+    '</tbody>';
+}
+
+function renderUniformStatus(cadet) {
+  return hasCompleteUniformTest(cadet)
+    ? '<span class="badge ready">Complete</span>'
+    : '<span class="badge overdue">Needs Uniform</span>';
+}
+
+function renderUniformExclusions(uniformRows) {
+  renderScopedExclusionList({
+    containerId: 'excludedUniformsList',
+    rows: uniformRows,
+    emptyMessage: 'No cadets are excluded from uniform tests.',
+    noDataMessage: 'Upload a cadet report to manage uniform exclusions.',
+    action: 'include-uniform',
+    buttonLabel: 'Re-add to Uniforms'
+  });
+}
+
+function renderPrintableMilestonesReport() {
+  const report = document.getElementById('milestonesPrintReport');
+  const presentationRequirement = SDA_REQUIREMENTS.find(item => item.sourceField === 'OralPresentationDate');
+  const printedOn = dateFormatter.format(new Date());
+
+  const milestoneRows = sortPrintableDueRows(getVisibleMilestoneRows()).map(cadet => [
+    cadet.name || 'Unknown',
+    cadet.achievement || 'Unknown',
+    weeksFromDueText(cadet),
+    getCheckStatusLabel(cadet, 'Aerospace Test or Module'),
+    getCheckStatusLabel(cadet, 'Leadership Test or Module'),
+    getCheckStatusLabel(cadet, 'Drill')
+  ]);
+  const sdaRows = sortPrintableDueRows(getVisibleSdaRows()).map(cadet => [
+    cadet.name || 'Unknown',
+    weeksFromDueText(cadet),
+    getSdaRequirementStatusLabel(cadet, presentationRequirement)
+  ]);
+  const drillRows = sortPrintableDueRows(getVisibleDrillRows()).map(cadet => [
+    cadet.name || 'Unknown',
+    weeksFromDueText(cadet),
+    getDrillTestRequiredLabel(cadet)
+  ]);
+  const uniformNames = getVisibleUniformRows().map(cadet => cadet.name || 'Unknown');
+
+  report.innerHTML = `
+    <div class="print-report-header">
+      <h1>Milestones, SDAs, Drill & Uniform</h1>
+      <p>${esc(loadedFileName || 'No report file loaded')} | Printed ${esc(printedOn)}</p>
+    </div>
+    ${renderPrintTable(
+      'Milestones',
+      ['Name', 'Promotion Name', 'Weeks From Due', 'Aerospace Tests', 'Leadership Test', 'Drill'],
+      milestoneRows,
+      'No milestone cadets are shown with the current exclusions.'
+    )}
+    ${renderPrintTable(
+      'SDAs',
+      ['Name', 'Weeks From Due', 'Presentation Status'],
+      sdaRows,
+      'No SDA cadets are shown with the current exclusions.'
+    )}
+    ${renderPrintTable(
+      'Drill',
+      ['Name', 'Weeks From Due', 'Drill Test Required'],
+      drillRows,
+      'No drill cadets match the current filters and exclusions.'
+    )}
+    ${renderPrintNameColumns(
+      'Uniform',
+      uniformNames,
+      'No uniform cadets match the current filters and exclusions.'
+    )}
+  `;
+}
+
+function renderPrintTable(title, headers, rows, emptyMessage) {
+  return `<section class="print-section">
+    <h2>${esc(title)}</h2>
+    <table class="print-table">
+      <thead><tr>${headers.map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${rows.length
+    ? rows.map(row => `<tr>${row.map(value => `<td>${esc(value)}</td>`).join('')}</tr>`).join('')
+    : `<tr><td class="print-empty" colspan="${headers.length}">${esc(emptyMessage)}</td></tr>`}
+      </tbody>
+    </table>
+  </section>`;
+}
+
+function renderPrintNameColumns(title, names, emptyMessage) {
+  const rows = [];
+  for (let index = 0; index < names.length; index += 3) {
+    rows.push(names.slice(index, index + 3));
+  }
+
+  return `<section class="print-section">
+    <h2>${esc(title)}</h2>
+    <table class="print-table print-name-columns">
+      <thead><tr><th>Name</th><th>Name</th><th>Name</th></tr></thead>
+      <tbody>
+        ${rows.length
+    ? rows.map(row => `<tr>${[0, 1, 2].map(index => `<td>${esc(row[index] || '')}</td>`).join('')}</tr>`).join('')
+    : `<tr><td class="print-empty" colspan="3">${esc(emptyMessage)}</td></tr>`}
+      </tbody>
+    </table>
+  </section>`;
+}
+
+function sortPrintableDueRows(rows) {
+  return [...rows].sort((left, right) =>
+    printableDuePriority(left) - printableDuePriority(right) ||
+    compareDueDate(left, right) ||
+    compareRank(left, right) ||
+    compareText(left.name, right.name)
+  );
+}
+
+function printableDuePriority(cadet) {
+  if (!(cadet.dueDate instanceof Date)) return 2;
+  return cadet.daysUntil < 0 ? 0 : 1;
+}
+
+function weeksFromDueText(cadet) {
+  const days = cadet.daysUntil;
+  if (days === null || days === undefined || Number.isNaN(days)) return 'No due date';
+  if (days === 0) return 'Due this week';
+
+  const weeks = Math.max(1, Math.ceil(Math.abs(days) / 7));
+  const label = `${weeks} week${weeks === 1 ? '' : 's'}`;
+  return days < 0 ? `${label} late` : `${label} away`;
+}
+
+function getCheckStatusLabel(cadet, sourceName) {
+  const check = cadet.checks.find(candidate => candidate.name === sourceName);
+  if (!check) return 'Not required';
+  return check.done ? 'Complete' : 'Missing';
+}
+
+function isCheckComplete(cadet, sourceName) {
+  const check = cadet.checks.find(candidate => candidate.name === sourceName);
+  return Boolean(check && check.done);
+}
+
+function getSdaRequirementStatusLabel(cadet, item) {
+  if (!item) return 'Not required';
+
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  const required = hasValue(requirementRow[item.requirementField]);
+  if (!required) return 'Not required';
+
+  return hasValue(cadet.raw[item.sourceField]) ? 'Complete' : 'Missing';
+}
+
+function getDrillTestRequiredLabel(cadet) {
+  const achievement = clean(cadet.achievement);
+
+  if (achievement.toLowerCase() === 'wright brothers') {
+    return isCheckComplete(cadet, 'Leadership Test or Module')
+      ? 'Wright Brothers Drill Test'
+      : 'Wright Brothers Leadership Test Must Be Completed First';
+  }
+
+  const match = achievement.match(/Achievement\s+(\d+)/i);
+  if (match) return `Drill Test ${match[1]}`;
+
+  return achievement ? `${achievement} Drill Test` : 'Drill Test';
+}
+
+function renderMilestoneSdaExclusions(milestoneRows, sdaRows) {
+  renderScopedExclusionList({
+    containerId: 'excludedMilestonesList',
+    rows: milestoneRows,
+    emptyMessage: 'No cadets are excluded from milestone tests.',
+    noDataMessage: 'Upload a cadet report to manage milestone exclusions.',
+    action: 'include-milestone',
+    buttonLabel: 'Re-add to Milestones'
+  });
+  renderScopedExclusionList({
+    containerId: 'excludedSdasList',
+    rows: sdaRows,
+    emptyMessage: 'No cadets are excluded from SDA requirements.',
+    noDataMessage: 'Upload a cadet report to manage SDA exclusions.',
+    action: 'include-sda',
+    buttonLabel: 'Re-add to SDAs'
+  });
+}
+
+function renderScopedExclusionList({ containerId, rows, emptyMessage, noDataMessage, action, buttonLabel }) {
+  const container = document.getElementById(containerId);
+
+  if (!cadets.length) {
+    container.innerHTML = `<div class="empty">${esc(noDataMessage)}</div>`;
+    return;
+  }
+
+  if (!rows.length) {
+    container.innerHTML = `<div class="empty">${esc(emptyMessage)}</div>`;
+    return;
+  }
+
+  container.innerHTML = rows
+    .map(cadet => `<div class="excluded-item">
+      <div class="excluded-meta">
+        <strong>${esc(cadet.name || 'Unknown')}</strong>
+        <span class="note">${esc(cadet.achievement || 'Unknown')} | CAPID ${esc(cadet.capid || '')}</span>
+      </div>
+      <button class="action-chip include" type="button" data-action="${esc(action)}" data-key="${esc(cadet.key)}">${esc(buttonLabel)}</button>
+    </div>`)
+    .join('');
+}
+
+function renderCadetTable(table, rows, options = {}) {
+  const { compact = false, emptyMessage = 'No cadets match this view.' } = options;
+
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to begin.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = `<tr><td class="empty">${esc(emptyMessage)}</td></tr>`;
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>Cadet</th>
+      <th>Working On</th>
+      <th>Due</th>
+      <th>Status</th>
+      <th>Progress</th>
+      <th>Requirements</th>
+      ${compact ? '' : '<th>Email</th>'}
+    </tr></thead><tbody>` +
+    rows.map(cadet => `<tr>
+      <td>
+        <strong>${esc(cadet.name || 'Unknown')}</strong><br>
+        <span class="note">CAPID ${esc(cadet.capid || '')}</span>
+        <div class="cadet-actions">${renderActionButton(cadet, compact)}</div>
+      </td>
+      <td>
+        <strong class="achievement-name">${esc(cadet.achievement || 'Unknown')}</strong>
+        ${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}
+      </td>
+      <td>${formatDate(cadet.dueDate)}<br><span class="note">${daysText(cadet.daysUntil)}</span></td>
+      <td><span class="badge ${statusClass(cadet.status)}">${cadet.status}</span></td>
+      <td><span class="progress"><span style="width:${cadet.progress}%"></span></span>${cadet.completed}/${cadet.total}</td>
+      <td><div class="missing-list">${renderMissing(cadet)}</div></td>
+      ${compact ? '' : `<td>${esc(cadet.email || '')}</td>`}
+    </tr>`).join('') +
+    '</tbody>';
+}
+
+function renderMissing(cadet) {
+  if (!cadet.checks.length) return '<span class="badge future">No tracked items</span>';
+
+  const orderedChecks = [
+    ...cadet.checks.filter(check => !check.done),
+    ...cadet.checks.filter(check => check.done)
+  ];
+
+  return orderedChecks
+    .map(check => `<span class="pill ${check.done ? 'pill-complete' : 'pill-incomplete'}">${esc(check.name)}</span>`)
+    .join('');
+}
+
+function renderActionButton(cadet, compact) {
+  const excluded = excludedCadetKeys.has(cadet.key);
+
+  if (compact) {
+    return `<button class="action-chip exclude" type="button" data-action="exclude" data-key="${esc(cadet.key)}">Exclude</button>`;
+  }
+
+  if (excluded) {
+    return `<button class="action-chip include" type="button" data-action="include" data-key="${esc(cadet.key)}">Re-add</button>`;
+  }
+
+  return `<button class="action-chip exclude" type="button" data-action="exclude" data-key="${esc(cadet.key)}">Exclude</button>`;
+}
+
+function renderExcludedCadets() {
+  const container = document.getElementById('excludedCadetsList');
+  const excludedCadets = getExcludedLoadedCadets()
+    .sort((left, right) => left.name.localeCompare(right.name) || left.achievement.localeCompare(right.achievement));
+
+  document.getElementById('excludedCount').textContent = `${excludedCadets.length} excluded`;
+
+  if (!cadets.length) {
+    container.innerHTML = '<div class="empty">Upload a cadet report to manage dashboard exclusions.</div>';
+    return;
+  }
+
+  if (!excludedCadets.length) {
+    container.innerHTML = '<div class="empty">No cadets are excluded from the main dashboard.</div>';
+    return;
+  }
+
+  container.innerHTML = excludedCadets
+    .map(cadet => `<div class="excluded-item">
+      <div class="excluded-meta">
+        <strong>${esc(cadet.name || 'Unknown')}</strong>
+        <span class="note">${esc(cadet.achievement || 'Unknown')} | CAPID ${esc(cadet.capid || '')}</span>
+      </div>
+      <button class="action-chip include" type="button" data-action="include" data-key="${esc(cadet.key)}">Re-add to Dashboard</button>
+    </div>`)
+    .join('');
+}
+
+function compareDueDate(left, right) {
+  return normalizedDateValue(left.dueDate) - normalizedDateValue(right.dueDate);
+}
+
+function compareDueDateWithDirection(left, right, direction = DUE_SORT_DEFAULT) {
+  const leftValue = normalizedDateValue(left.dueDate);
+  const rightValue = normalizedDateValue(right.dueDate);
+
+  if (leftValue === rightValue) return 0;
+  if (leftValue === Number.MAX_SAFE_INTEGER) return 1;
+  if (rightValue === Number.MAX_SAFE_INTEGER) return -1;
+  return direction === 'dueDesc' ? rightValue - leftValue : leftValue - rightValue;
+}
+
+function compareRank(left, right) {
+  return (left.rankOrder - right.rankOrder) || compareText(left.rank, right.rank);
+}
+
+function compareText(left, right) {
+  return clean(left).localeCompare(clean(right), undefined, { sensitivity: 'base' });
+}
+
+function normalizedDateValue(date) {
+  return date instanceof Date ? date.getTime() : Number.MAX_SAFE_INTEGER;
+}
+
+function setSectionCount(elementId, count) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  element.textContent = formatCadetCount(count);
+}
+
+function renderRequirements() {
+  const table = document.getElementById('requirementsTable');
+  if (!requirements.length) {
+    table.innerHTML = '<tr><td class="empty">No requirements loaded.</td></tr>';
+    return;
+  }
+
+  const headers = Object.keys(requirements[0]);
+  table.innerHTML = `<thead><tr>${headers.map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>` +
+    requirements.map(row => `<tr>${headers.map(header => `<td>${esc(row[header] || '')}</td>`).join('')}</tr>`).join('') +
+    '</tbody>';
+}
+
+function populateAchievementFilter() {
+  const select = document.getElementById('achievementFilter');
+  const currentValue = select.value;
+  const achievements = [...new Set(cadets.map(cadet => cadet.achievement).filter(Boolean))]
+    .sort((left, right) => achievementOrder(left) - achievementOrder(right) || left.localeCompare(right));
+
+  select.innerHTML = '<option value="all">All achievements</option>' +
+    achievements.map(achievement => `<option value="${esc(achievement)}">${esc(achievement)}</option>`).join('');
+  select.value = achievements.includes(currentValue) ? currentValue : 'all';
+}
+
+function populateDrillAchievementFilter() {
+  const select = document.getElementById('drillAchievementFilter');
+  const currentValue = select.value;
+  const achievements = [...new Set(cadets.filter(requiresDrill).map(cadet => cadet.achievement).filter(Boolean))]
+    .sort((left, right) => achievementOrder(left) - achievementOrder(right) || left.localeCompare(right));
+
+  select.innerHTML = '<option value="all">All achievements</option>' +
+    achievements.map(achievement => `<option value="${esc(achievement)}">${esc(achievement)}</option>`).join('');
+  select.value = achievements.includes(currentValue) ? currentValue : 'all';
+}
+
+function populateUniformAchievementFilter() {
+  const select = document.getElementById('uniformAchievementFilter');
+  const currentValue = select.value;
+  const achievements = [...new Set(cadets.filter(requiresUniform).map(cadet => cadet.achievement).filter(Boolean))]
+    .sort((left, right) => achievementOrder(left) - achievementOrder(right) || left.localeCompare(right));
+
+  select.innerHTML = '<option value="all">All achievements</option>' +
+    achievements.map(achievement => `<option value="${esc(achievement)}">${esc(achievement)}</option>`).join('');
+  select.value = achievements.includes(currentValue) ? currentValue : 'all';
+}
+
+function achievementOrder(achievement) {
+  const order = requirements.map(row => clean(row.Achievement).toLowerCase());
+  const index = order.indexOf(clean(achievement).toLowerCase());
+  if (index >= 0) return index;
+
+  const match = achievement.match(/Achievement\s+(\d+)/i);
+  const numberValue = Number.parseInt(match ? match[1] : '', 10);
+  return Number.isFinite(numberValue) ? numberValue : 999;
+}
+
+function milestoneLabel(achievement) {
+  const milestone = MILESTONE_ACHIEVEMENTS.find(item =>
+    item.achievement.toLowerCase() === clean(achievement).toLowerCase()
+  );
+  return milestone ? milestone.label : '';
+}
+
+function requiresSda(cadet) {
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  return SDA_REQUIREMENTS.some(item => hasValue(requirementRow[item.requirementField]));
+}
+
+function requiresDrill(cadet) {
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  return hasValue(requirementRow.Drill);
+}
+
+function requiresUniform(cadet) {
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  return hasValue(requirementRow.Uniform);
+}
+
+function hasMissingDrillTest(cadet) {
+  return requiresDrill(cadet) && !hasCompleteDrillTest(cadet);
+}
+
+function hasCompleteDrillTest(cadet) {
+  return hasValue(cadet.raw.DrillDate) && number(cadet.raw.DrillScore) > 0;
+}
+
+function hasMissingUniformTest(cadet) {
+  return requiresUniform(cadet) && !hasCompleteUniformTest(cadet);
+}
+
+function hasCompleteUniformTest(cadet) {
+  return hasValue(cadet.raw.UniformDate);
+}
+
+function getMilestoneRows() {
+  return sortPromotionRows(cadets.filter(cadet => cadet.milestoneLabel));
+}
+
+function getVisibleMilestoneRows() {
+  return sortDueRows(
+    getMilestoneRows().filter(cadet => !excludedMilestoneKeys.has(cadet.key)),
+    dueSorts.milestone
+  );
+}
+
+function getSdaRows() {
+  return sortPromotionRows(cadets.filter(requiresSda));
+}
+
+function getVisibleSdaRows() {
+  return sortDueRows(
+    getSdaRows().filter(cadet => !excludedSdaKeys.has(cadet.key)),
+    dueSorts.sda
+  );
+}
+
+function getVisibleDrillRows() {
+  let rows = cadets.filter(cadet => requiresDrill(cadet) && !excludedDrillKeys.has(cadet.key));
+  const query = document.getElementById('drillSearchInput').value.toLowerCase();
+  const drillStatus = document.getElementById('drillStatusFilter').value;
+  const achievement = document.getElementById('drillAchievementFilter').value;
+
+  if (query) {
+    rows = rows.filter(cadet =>
+      [cadet.name, cadet.capid, cadet.email, cadet.achievement].join(' ').toLowerCase().includes(query)
+    );
+  }
+
+  if (drillStatus === 'needs') rows = rows.filter(hasMissingDrillTest);
+  if (drillStatus === 'complete') rows = rows.filter(hasCompleteDrillTest);
+  if (achievement !== 'all') rows = rows.filter(cadet => cadet.achievement === achievement);
+
+  return sortDueRows(rows, dueSorts.drill);
+}
+
+function getVisibleUniformRows() {
+  let rows = cadets.filter(cadet => requiresUniform(cadet) && !excludedUniformKeys.has(cadet.key));
+  const query = document.getElementById('uniformSearchInput').value.toLowerCase();
+  const uniformStatus = document.getElementById('uniformStatusFilter').value;
+  const achievement = document.getElementById('uniformAchievementFilter').value;
+
+  if (query) {
+    rows = rows.filter(cadet =>
+      [cadet.name, cadet.capid, cadet.email, cadet.achievement].join(' ').toLowerCase().includes(query)
+    );
+  }
+
+  if (uniformStatus === 'needs') rows = rows.filter(hasMissingUniformTest);
+  if (uniformStatus === 'complete') rows = rows.filter(hasCompleteUniformTest);
+  if (achievement !== 'all') rows = rows.filter(cadet => cadet.achievement === achievement);
+
+  return sortDueRows(rows, dueSorts.uniform);
+}
+
+function getVisibleMilestoneCadets() {
+  return cadets.filter(cadet => cadet.milestoneLabel && !excludedMilestoneKeys.has(cadet.key));
+}
+
+function getExcludedMilestoneCadets() {
+  return sortPromotionRows(cadets.filter(cadet => cadet.milestoneLabel && excludedMilestoneKeys.has(cadet.key)));
+}
+
+function getExcludedSdaCadets() {
+  return sortPromotionRows(cadets.filter(cadet => requiresSda(cadet) && excludedSdaKeys.has(cadet.key)));
+}
+
+function getExcludedDrillCadets() {
+  return sortPromotionRows(cadets.filter(cadet => requiresDrill(cadet) && excludedDrillKeys.has(cadet.key)));
+}
+
+function getExcludedUniformCadets() {
+  return sortPromotionRows(cadets.filter(cadet => requiresUniform(cadet) && excludedUniformKeys.has(cadet.key)));
+}
+
+function getDashboardCadets() {
+  return cadets.filter(cadet => !excludedCadetKeys.has(cadet.key));
+}
+
+function getExcludedLoadedCadets() {
+  return cadets.filter(cadet => excludedCadetKeys.has(cadet.key));
+}
+
+function loadExcludedCadets() {
+  return loadStoredSet(EXCLUDED_STORAGE_KEY, 'stored dashboard exclusions');
+}
+
+function loadMilestoneExclusions() {
+  return loadStoredSet(MILESTONE_EXCLUDED_STORAGE_KEY, 'stored milestone exclusions');
+}
+
+function loadSdaExclusions() {
+  return loadStoredSet(SDA_EXCLUDED_STORAGE_KEY, 'stored SDA exclusions');
+}
+
+function loadDrillExclusions() {
+  return loadStoredSet(DRILL_EXCLUDED_STORAGE_KEY, 'stored drill exclusions');
+}
+
+function loadUniformExclusions() {
+  return loadStoredSet(UNIFORM_EXCLUDED_STORAGE_KEY, 'stored uniform exclusions');
+}
+
+function loadStoredSet(storageKey, description) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    return new Set(Array.isArray(stored) ? stored.map(value => clean(value)) : []);
+  } catch (error) {
+    console.warn(`Unable to read ${description}.`, error);
+    return new Set();
+  }
+}
+
+function persistExcludedCadets() {
+  persistStoredSet(EXCLUDED_STORAGE_KEY, excludedCadetKeys, 'dashboard exclusions');
+}
+
+function persistMilestoneExclusions() {
+  persistStoredSet(MILESTONE_EXCLUDED_STORAGE_KEY, excludedMilestoneKeys, 'milestone exclusions');
+}
+
+function persistSdaExclusions() {
+  persistStoredSet(SDA_EXCLUDED_STORAGE_KEY, excludedSdaKeys, 'SDA exclusions');
+}
+
+function persistDrillExclusions() {
+  persistStoredSet(DRILL_EXCLUDED_STORAGE_KEY, excludedDrillKeys, 'drill exclusions');
+}
+
+function persistUniformExclusions() {
+  persistStoredSet(UNIFORM_EXCLUDED_STORAGE_KEY, excludedUniformKeys, 'uniform exclusions');
+}
+
+function persistStoredSet(storageKey, values, description) {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify([...values]));
+  } catch (error) {
+    console.warn(`Unable to save ${description}.`, error);
+  }
+}
+
+function showDashboard() {
+  uploadPage.classList.add('hidden');
+  dashboardPage.classList.remove('hidden');
+  loadedReportName.textContent = loadedFileName || 'Cadet report loaded';
+}
+
+function showUploadPage() {
+  dashboardPage.classList.add('hidden');
+  uploadPage.classList.remove('hidden');
+  loadedReportName.textContent = 'No report loaded';
+}
+
+function setSelectedFileName(name) {
+  uploadFileName.textContent = name ? `Selected: ${name}` : 'No file selected';
+}
+
+function setStatusMessage(message, tone) {
+  document.querySelectorAll('[data-status-message]').forEach(banner => {
+    banner.textContent = message;
+    banner.className = `status-banner ${tone}`;
+  });
+}
+
+function cadetKey(raw) {
+  const capid = clean(raw.CAPID);
+  if (capid) return `capid:${capid}`;
+
+  return `fallback:${clean(raw.NameLast).toLowerCase()}|${clean(raw.NameFirst).toLowerCase()}|${clean(raw.AchvName).toLowerCase()}`;
+}
+
+function statusClass(status) {
+  if (status === 'Overdue') return 'overdue';
+  if (status === 'Due Soon') return 'soon';
+  if (status === 'Ready') return 'ready';
+  if (status === 'Future') return 'future';
+  return 'notready';
+}
+
+function formatCadetCount(count) {
+  return `${count} cadet${count === 1 ? '' : 's'}`;
+}
+
+function daysText(days) {
+  if (days === null || days === undefined || Number.isNaN(days)) return 'No due date';
+  if (days < 0) return `${Math.abs(days)} days overdue`;
+  if (days === 0) return 'Due today';
+  return `Due in ${days} days`;
+}
+
+function formatDate(date) {
+  return date ? dateFormatter.format(date) : 'Unknown';
+}
+
+function parseDate(value) {
+  value = clean(value);
+  if (!hasValue(value)) return null;
+
+  const nativeDate = new Date(value);
+  if (!Number.isNaN(nativeDate.getTime())) return nativeDate;
+
+  const match = value.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})$/);
+  if (!match) return null;
+
+  const months = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+  return new Date(Number(match[3]), months[match[2].slice(0, 3).toLowerCase()], Number(match[1]));
+}
+
+function startOfDay(date) {
+  return date ? new Date(date.getFullYear(), date.getMonth(), date.getDate()) : null;
+}
+
+function addDays(date, days) {
+  return date ? new Date(date.getFullYear(), date.getMonth(), date.getDate() + days) : null;
+}
+
+function passScore(date, score) {
+  return hasValue(date) && number(score) >= 80;
+}
+
+function number(value) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function truthy(value) {
+  return ['true', 'yes', 'y', '1', 'pass', 'passed', 'complete', 'completed'].includes(clean(value).toLowerCase());
+}
+
+function hasValue(value) {
+  const normalized = clean(value).toLowerCase();
+  return normalized !== '' && normalized !== 'nan' && normalized !== 'null' && normalized !== 'none' && normalized !== 'n/a';
+}
+
+function clean(value) {
+  return (value ?? '').toString().trim();
+}
+
+function esc(value) {
+  return clean(value).replace(/[&<>'"]/g, character => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]
+  ));
+}
+
+renderAll();
+
+</script>
+</body>
+</html>
