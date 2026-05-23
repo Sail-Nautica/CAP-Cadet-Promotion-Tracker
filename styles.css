@@ -59,12 +59,36 @@ header::after {
 }
 
 header h1 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: clamp(1.9rem, 3vw, 2.8rem);
   letter-spacing: 0.01em;
 }
 
+.header-title-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 header p {
+  position: relative;
+  z-index: 1;
   margin: 0;
   max-width: 920px;
   color: rgba(255, 255, 255, 0.88);
