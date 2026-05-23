@@ -27,6 +27,7 @@ Gen Carl A Spaatz,C/Col,Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,None,N
 let cadets = [];
 let requirements = parseCSV(BUILT_IN_REQUIREMENTS_CSV);
 let excludedCadetKeys = loadExcludedCadets();
+let loadedFileName = '';
 let dashboardSorts = {
   overdue: DASHBOARD_SORT_DEFAULT,
   soon: DASHBOARD_SORT_DEFAULT,
@@ -40,8 +41,21 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 const today = startOfDay(new Date());
 
-document.getElementById('cadetFile').addEventListener('change', handleCadetFileChange);
+const cadetFileInput = document.getElementById('cadetFile');
+const uploadPage = document.getElementById('uploadPage');
+const dashboardPage = document.getElementById('dashboardPage');
+const uploadDropZone = document.getElementById('uploadDropZone');
+const uploadFileName = document.getElementById('uploadFileName');
+const loadedReportName = document.getElementById('loadedReportName');
+
+cadetFileInput.addEventListener('change', handleCadetFileChange);
+document.getElementById('chooseFileButton').addEventListener('click', () => cadetFileInput.click());
+document.getElementById('uploadAnotherButton').addEventListener('click', () => cadetFileInput.click());
 document.addEventListener('click', handleActionClick);
+uploadDropZone.addEventListener('dragenter', handleUploadDrag);
+uploadDropZone.addEventListener('dragover', handleUploadDrag);
+uploadDropZone.addEventListener('dragleave', handleUploadDrag);
+uploadDropZone.addEventListener('drop', handleUploadDrop);
 
 document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -63,12 +77,24 @@ async function handleCadetFileChange(event) {
   const file = event.target.files[0];
   if (!file) return;
 
+  await processCadetFile(file);
+  event.target.value = '';
+}
+
+async function processCadetFile(file) {
+  const previousCadets = cadets;
+  const previousFileName = loadedFileName;
+  setSelectedFileName(file.name);
+
   try {
     setStatusMessage(`Loading ${file.name}...`, 'info');
     const rows = await loadCadetRows(file);
+    validateCadetRows(rows);
     cadets = rows.map(analyzeCadet);
+    loadedFileName = file.name;
     populateAchievementFilter();
     renderAll();
+    showDashboard();
 
     const visibleCount = getDashboardCadets().length;
     setStatusMessage(
@@ -77,11 +103,29 @@ async function handleCadetFileChange(event) {
     );
   } catch (error) {
     console.error(error);
-    cadets = [];
+    cadets = previousCadets;
+    loadedFileName = previousFileName;
     populateAchievementFilter();
     renderAll();
+    if (cadets.length) {
+      showDashboard();
+    } else {
+      showUploadPage();
+    }
     setStatusMessage(error.message || 'Unable to read that report.', 'error');
   }
+}
+
+function handleUploadDrag(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  uploadDropZone.classList.toggle('drag-over', event.type === 'dragenter' || event.type === 'dragover');
+}
+
+async function handleUploadDrop(event) {
+  handleUploadDrag(event);
+  const file = event.dataTransfer.files[0];
+  if (file) await processCadetFile(file);
 }
 
 async function loadCadetRows(file) {
@@ -107,6 +151,19 @@ async function loadCadetRows(file) {
   }
 
   throw new Error('Upload a cadet full-track report in CSV or XLSX format.');
+}
+
+function validateCadetRows(rows) {
+  if (!rows.length) {
+    throw new Error('That file did not contain any cadet rows.');
+  }
+
+  const headers = new Set(Object.keys(rows[0]).map(header => clean(header)));
+  const hasCadetName = headers.has('NameFirst') || headers.has('NameLast');
+
+  if (!headers.has('AchvName') || !headers.has('CAPID') || !hasCadetName) {
+    throw new Error('That file does not look like a cadet full-track report. Upload the export with CAPID, cadet name, and achievement columns.');
+  }
 }
 
 function handleActionClick(event) {
@@ -576,10 +633,27 @@ function persistExcludedCadets() {
   }
 }
 
+function showDashboard() {
+  uploadPage.classList.add('hidden');
+  dashboardPage.classList.remove('hidden');
+  loadedReportName.textContent = loadedFileName || 'Cadet report loaded';
+}
+
+function showUploadPage() {
+  dashboardPage.classList.add('hidden');
+  uploadPage.classList.remove('hidden');
+  loadedReportName.textContent = 'No report loaded';
+}
+
+function setSelectedFileName(name) {
+  uploadFileName.textContent = name ? `Selected: ${name}` : 'No file selected';
+}
+
 function setStatusMessage(message, tone) {
-  const banner = document.getElementById('statusMessage');
-  banner.textContent = message;
-  banner.className = `status-banner ${tone}`;
+  document.querySelectorAll('[data-status-message]').forEach(banner => {
+    banner.textContent = message;
+    banner.className = `status-banner ${tone}`;
+  });
 }
 
 function cadetKey(raw) {
