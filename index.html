@@ -46,6 +46,7 @@
     <nav class="tabs">
       <button class="tab active" data-view="dashboard">Main Dashboard</button>
       <button class="tab" data-view="all">All Promotions</button>
+      <button class="tab" data-view="milestones">Milestones, SDAs, Drill, & Uniform</button>
       <button class="tab" data-view="requirements">Requirements Matrix</button>
     </nav>
 
@@ -140,6 +141,163 @@
       </div>
     </section>
 
+    <section id="milestonesView" class="hidden">
+      <div class="print-toolbar">
+        <button id="printMilestonesButton" class="secondary-button" type="button">Print Milestones, SDAs, Drill & Uniform</button>
+      </div>
+
+      <div class="paired-section">
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Milestone Tests</h2>
+              <p class="note">Cadets currently working on Wright Brothers, Billy Mitchell, Amelia Earhart, Eaker, or Spaatz milestones. Use the summary buttons to bulk-exclude one milestone test from this page.</p>
+            </div>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Due</span>
+                <select id="milestoneDueSort" class="due-sort" data-table="milestone">
+                  <option value="dueAsc">Soonest first</option>
+                  <option value="dueDesc">Latest first</option>
+                </select>
+              </label>
+              <span id="milestoneCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div id="milestoneSummary" class="summary-grid"></div>
+          <div class="table-wrap"><table id="milestoneTable"></table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Milestone Exclusions</h2>
+              <p class="note">Excluded cadets stay off the milestone table until you re-add them.</p>
+            </div>
+            <span id="milestoneExcludedCount" class="badge future">0 excluded</span>
+          </div>
+          <div id="excludedMilestonesList" class="excluded-list"></div>
+        </div>
+      </div>
+
+      <div class="paired-section">
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>SDA Requirements</h2>
+              <p class="note">Cadets whose current achievement requires staff service, oral presentation, or technical writing SDA items.</p>
+            </div>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Due</span>
+                <select id="sdaDueSort" class="due-sort" data-table="sda">
+                  <option value="dueAsc">Soonest first</option>
+                  <option value="dueDesc">Latest first</option>
+                </select>
+              </label>
+              <span id="sdaCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="sdaTable"></table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>SDA Exclusions</h2>
+              <p class="note">Excluded cadets stay off the SDA table until you re-add them.</p>
+            </div>
+            <span id="sdaExcludedCount" class="badge future">0 excluded</span>
+          </div>
+          <div id="excludedSdasList" class="excluded-list"></div>
+        </div>
+      </div>
+
+      <div class="paired-section">
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Drill Tests</h2>
+              <p class="note">Cadets whose current achievement requires drill. This list is filtered separately from milestones and SDAs.</p>
+            </div>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Due</span>
+                <select id="drillDueSort" class="due-sort" data-table="drill">
+                  <option value="dueAsc">Soonest first</option>
+                  <option value="dueDesc">Latest first</option>
+                </select>
+              </label>
+              <span id="drillCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="controls">
+            <input id="drillSearchInput" type="search" placeholder="Search name, CAPID, email, or achievement..." />
+            <select id="drillStatusFilter">
+              <option value="needs">Needs drill test</option>
+              <option value="complete">Drill complete</option>
+              <option value="all">All drill-required cadets</option>
+            </select>
+            <select id="drillAchievementFilter"><option value="all">All achievements</option></select>
+          </div>
+          <div class="table-wrap"><table id="drillTable"></table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Drill Exclusions</h2>
+              <p class="note">Excluded cadets stay off the drill table until you re-add them.</p>
+            </div>
+            <span id="drillExcludedCount" class="badge future">0 excluded</span>
+          </div>
+          <div id="excludedDrillsList" class="excluded-list"></div>
+        </div>
+      </div>
+
+      <div class="paired-section">
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Uniform Tests</h2>
+              <p class="note">Cadets whose current achievement requires uniform inspection. This list is filtered separately from milestones, SDAs, and drill.</p>
+            </div>
+            <div class="section-tools">
+              <label class="section-sort">
+                <span>Due</span>
+                <select id="uniformDueSort" class="due-sort" data-table="uniform">
+                  <option value="dueAsc">Soonest first</option>
+                  <option value="dueDesc">Latest first</option>
+                </select>
+              </label>
+              <span id="uniformCount" class="badge future">0 cadets</span>
+            </div>
+          </div>
+          <div class="controls">
+            <input id="uniformSearchInput" type="search" placeholder="Search name, CAPID, email, or achievement..." />
+            <select id="uniformStatusFilter">
+              <option value="needs">Needs uniform test</option>
+              <option value="complete">Uniform complete</option>
+              <option value="all">All uniform-required cadets</option>
+            </select>
+            <select id="uniformAchievementFilter"><option value="all">All achievements</option></select>
+          </div>
+          <div class="table-wrap"><table id="uniformTable"></table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Uniform Exclusions</h2>
+              <p class="note">Excluded cadets stay off the uniform table until you re-add them.</p>
+            </div>
+            <span id="uniformExcludedCount" class="badge future">0 excluded</span>
+          </div>
+          <div id="excludedUniformsList" class="excluded-list"></div>
+        </div>
+      </div>
+    </section>
+
     <section id="requirementsView" class="hidden">
       <div class="card">
         <h2>Promotion Requirements Matrix</h2>
@@ -148,6 +306,8 @@
       </div>
     </section>
   </main>
+
+  <section id="milestonesPrintReport" class="print-report" aria-hidden="true"></section>
 
   <footer class="site-footer">
     <p>Made by Amit Sail for the Raritan Valley Composite Squadron.</p>
