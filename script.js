@@ -1,37 +1,73 @@
 const SOON_DAYS = 14;
 const EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-cadets-v1';
+const MILESTONE_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-milestones-v1';
+const SDA_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-sdas-v1';
+const DRILL_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-drills-v1';
+const UNIFORM_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-uniforms-v1';
 const DASHBOARD_SORT_DEFAULT = 'dueDate';
+const DUE_SORT_DEFAULT = 'dueAsc';
+const MILESTONE_ACHIEVEMENTS = [
+  { achievement: 'Wright Brothers', label: 'Wright Brothers' },
+  { achievement: 'Billy Mitchell', label: 'Mitchell' },
+  { achievement: 'Amelia Earhart', label: 'Amelia' },
+  { achievement: 'Gen Ira C Eaker', label: 'Eaker' },
+  { achievement: 'Gen Carl A Spaatz', label: 'Spaatz' }
+];
+const SDA_REQUIREMENTS = [
+  { requirementField: 'SDAStaffServiceDate', sourceField: 'StaffServiceDate', label: 'Staff Service' },
+  { requirementField: 'SDAOralPresentationDate', sourceField: 'OralPresentationDate', label: 'Oral Presentation' },
+  { requirementField: 'SDATechnicalWritingAssignmentDate', sourceField: 'TechnicalWritingAssignmentDate', label: 'Writing Date' },
+  { requirementField: 'SDATechnicalWritingAssignment', sourceField: 'TechnicalWritingAssignment', label: 'Writing Assignment' }
+];
+const SDA_DISPLAY_REQUIREMENTS = SDA_REQUIREMENTS.filter(item => item.label !== 'Writing Assignment');
+const MILESTONE_DISPLAY_CHECKS = [
+  { sourceName: 'Physical Fitness', label: 'Physical Fitness' },
+  { sourceName: 'Drill', label: 'Drill' },
+  { sourceName: 'Leadership Test or Module', label: 'Leadership Test' },
+  { sourceName: 'Aerospace Test or Module', label: 'Aerospace Test' },
+  { sourceName: 'Uniform', label: 'Uniform' }
+];
 const BUILT_IN_REQUIREMENTS_CSV = `Achievement,Rank,Physical Fitness,Leadership,Drill,Aerospace Education,Character Development,Active Participation,Cadet Oath,Uniform,Leadership Expectations,Special Activity,SDAStaffServiceDate,SDAOralPresentationDate,SDATechnicalWritingAssignmentDate,SDATechnicalWritingAssignment
 Achievement 1,C/Amn,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Cadet Welcome Course,None,None,None,None
 Achievement 2,C/A1C,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
 Achievement 3,C/SrA,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
-Wright Brothers,C/SSgt,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
+Wright Brothers,C/SSgt,Pass,Pass,Pass,None,None,Pass,Pass,Pass,Pass,None,None,None,None,None
 Achievement 4,C/TSgt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
 Achievement 5,C/MSgt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
 Achievement 6,C/SMSgt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
 Achievement 7,C/CMSgt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
 Achievement 8,C/CMSgt',Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Essay & Speech,None,None,None,None
-Billy Mitchell,C/2d Lt,Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,Encampment,None,None,None,None
+Billy Mitchell,C/2d Lt,Pass,Pass,None,Pass,None,Pass,Pass,Pass,Pass,Encampment,None,None,None,None
 Achievement 9,C/2d Lt',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
 Achievement 10,C/1st Lt,Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
 Achievement 11,C/1st Lt',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
-Amelia Earhart,C/Capt,Pass,Pass,None,None,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
+Amelia Earhart,C/Capt,Pass,Pass,None,None,None,Pass,Pass,Pass,Pass,None,None,None,None,None
 Achievement 12,C/Capt',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
 Achievement 13,C/Capt'',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
 Achievement 14,C/Maj,Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
 Achievement 15,C/Maj',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
 Achievement 16,C/Maj'',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
-Gen Ira C Eaker,C/Lt Col,Pass,None,None,None,Pass,Pass,Pass,Pass,Pass,"Officer Leadership Course, Speech, & Essay",None,None,None,None
-Gen Carl A Spaatz,C/Col,Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None`;
+Gen Ira C Eaker,C/Lt Col,Pass,None,None,None,None,Pass,Pass,Pass,Pass,"Officer Leadership Course, Speech, & Essay",None,None,None,None
+Gen Carl A Spaatz,C/Col,Pass,Pass,None,Pass,None,Pass,Pass,Pass,Pass,None,None,None,None,None`;
 
 let cadets = [];
 let requirements = parseCSV(BUILT_IN_REQUIREMENTS_CSV);
 let excludedCadetKeys = loadExcludedCadets();
+let excludedMilestoneKeys = loadMilestoneExclusions();
+let excludedSdaKeys = loadSdaExclusions();
+let excludedDrillKeys = loadDrillExclusions();
+let excludedUniformKeys = loadUniformExclusions();
 let loadedFileName = '';
 let dashboardSorts = {
   overdue: DASHBOARD_SORT_DEFAULT,
   soon: DASHBOARD_SORT_DEFAULT,
   ready: DASHBOARD_SORT_DEFAULT
+};
+let dueSorts = {
+  milestone: DUE_SORT_DEFAULT,
+  sda: DUE_SORT_DEFAULT,
+  drill: DUE_SORT_DEFAULT,
+  uniform: DUE_SORT_DEFAULT
 };
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -62,15 +98,28 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
   btn.classList.add('active');
   document.getElementById('dashboardView').classList.toggle('hidden', btn.dataset.view !== 'dashboard');
   document.getElementById('allView').classList.toggle('hidden', btn.dataset.view !== 'all');
+  document.getElementById('milestonesView').classList.toggle('hidden', btn.dataset.view !== 'milestones');
   document.getElementById('requirementsView').classList.toggle('hidden', btn.dataset.view !== 'requirements');
 }));
 
 document.getElementById('searchInput').addEventListener('input', renderAllCadets);
 document.getElementById('statusFilter').addEventListener('change', renderAllCadets);
 document.getElementById('achievementFilter').addEventListener('change', renderAllCadets);
+document.getElementById('drillSearchInput').addEventListener('input', renderDrillTests);
+document.getElementById('drillStatusFilter').addEventListener('change', renderDrillTests);
+document.getElementById('drillAchievementFilter').addEventListener('change', renderDrillTests);
+document.getElementById('uniformSearchInput').addEventListener('input', renderUniformTests);
+document.getElementById('uniformStatusFilter').addEventListener('change', renderUniformTests);
+document.getElementById('uniformAchievementFilter').addEventListener('change', renderUniformTests);
+document.getElementById('printMilestonesButton').addEventListener('click', handlePrintMilestonesReport);
+window.addEventListener('afterprint', () => document.body.classList.remove('printing-report'));
 document.querySelectorAll('.dashboard-sort').forEach(select => {
   select.value = dashboardSorts[select.dataset.section] || DASHBOARD_SORT_DEFAULT;
   select.addEventListener('change', handleDashboardSortChange);
+});
+document.querySelectorAll('.due-sort').forEach(select => {
+  select.value = dueSorts[select.dataset.table] || DUE_SORT_DEFAULT;
+  select.addEventListener('change', handleDueSortChange);
 });
 
 async function handleCadetFileChange(event) {
@@ -93,6 +142,8 @@ async function processCadetFile(file) {
     cadets = rows.map(analyzeCadet);
     loadedFileName = file.name;
     populateAchievementFilter();
+    populateDrillAchievementFilter();
+    populateUniformAchievementFilter();
     renderAll();
     showDashboard();
 
@@ -106,6 +157,8 @@ async function processCadetFile(file) {
     cadets = previousCadets;
     loadedFileName = previousFileName;
     populateAchievementFilter();
+    populateDrillAchievementFilter();
+    populateUniformAchievementFilter();
     renderAll();
     if (cadets.length) {
       showDashboard();
@@ -168,12 +221,23 @@ function validateCadetRows(rows) {
 
 function handleActionClick(event) {
   const button = event.target.closest('button[data-action]');
-  if (!button) return;
+  if (!button || button.disabled) return;
+
+  const action = clean(button.dataset.action);
+  if (action === 'bulk-exclude-milestone') {
+    bulkExcludeMilestone(button.dataset.achievement);
+    return;
+  }
+
+  if (action === 'bulk-include-milestone') {
+    bulkIncludeMilestone(button.dataset.achievement);
+    return;
+  }
 
   const key = clean(button.dataset.key);
   if (!key) return;
 
-  if (button.dataset.action === 'exclude') {
+  if (action === 'exclude') {
     excludedCadetKeys.add(key);
     persistExcludedCadets();
     renderAll();
@@ -181,12 +245,106 @@ function handleActionClick(event) {
     return;
   }
 
-  if (button.dataset.action === 'include') {
+  if (action === 'include') {
     excludedCadetKeys.delete(key);
     persistExcludedCadets();
     renderAll();
     setStatusMessage('Cadet re-added to the main dashboard.', 'success');
+    return;
   }
+
+  if (action === 'exclude-milestone') {
+    excludedMilestoneKeys.add(key);
+    persistMilestoneExclusions();
+    renderAll();
+    setStatusMessage('Cadet excluded from milestone tests.', 'info');
+    return;
+  }
+
+  if (action === 'include-milestone') {
+    excludedMilestoneKeys.delete(key);
+    persistMilestoneExclusions();
+    renderAll();
+    setStatusMessage('Cadet re-added to milestone tests.', 'success');
+    return;
+  }
+
+  if (action === 'exclude-sda') {
+    excludedSdaKeys.add(key);
+    persistSdaExclusions();
+    renderAll();
+    setStatusMessage('Cadet excluded from SDA requirements.', 'info');
+    return;
+  }
+
+  if (action === 'include-sda') {
+    excludedSdaKeys.delete(key);
+    persistSdaExclusions();
+    renderAll();
+    setStatusMessage('Cadet re-added to SDA requirements.', 'success');
+    return;
+  }
+
+  if (action === 'exclude-drill') {
+    excludedDrillKeys.add(key);
+    persistDrillExclusions();
+    renderAll();
+    setStatusMessage('Cadet excluded from drill tests.', 'info');
+    return;
+  }
+
+  if (action === 'include-drill') {
+    excludedDrillKeys.delete(key);
+    persistDrillExclusions();
+    renderAll();
+    setStatusMessage('Cadet re-added to drill tests.', 'success');
+    return;
+  }
+
+  if (action === 'exclude-uniform') {
+    excludedUniformKeys.add(key);
+    persistUniformExclusions();
+    renderAll();
+    setStatusMessage('Cadet excluded from uniform tests.', 'info');
+    return;
+  }
+
+  if (action === 'include-uniform') {
+    excludedUniformKeys.delete(key);
+    persistUniformExclusions();
+    renderAll();
+    setStatusMessage('Cadet re-added to uniform tests.', 'success');
+  }
+}
+
+function bulkExcludeMilestone(achievement) {
+  const visibleRows = getVisibleMilestoneCadets()
+    .filter(cadet => clean(cadet.achievement).toLowerCase() === clean(achievement).toLowerCase());
+
+  if (!visibleRows.length) {
+    setStatusMessage('No shown cadets are available to exclude for that milestone.', 'info');
+    return;
+  }
+
+  visibleRows.forEach(cadet => excludedMilestoneKeys.add(cadet.key));
+  persistMilestoneExclusions();
+  renderAll();
+  setStatusMessage(`${formatCadetCount(visibleRows.length)} excluded from ${milestoneLabel(achievement) || achievement}.`, 'info');
+}
+
+function bulkIncludeMilestone(achievement) {
+  const excludedRows = getExcludedMilestoneCadets()
+    .filter(cadet => clean(cadet.achievement).toLowerCase() === clean(achievement).toLowerCase());
+
+  if (!excludedRows.length) {
+    setStatusMessage('No excluded cadets are available to re-add for that milestone.', 'info');
+    return;
+  }
+
+  excludedRows.forEach(cadet => excludedMilestoneKeys.delete(cadet.key));
+  persistMilestoneExclusions();
+  renderAll();
+  setStatusMessage(`${formatCadetCount(excludedRows.length)} re-added to ${milestoneLabel(achievement) || achievement}.`, 'success');
 }
 
 function handleDashboardSortChange(event) {
@@ -195,6 +353,30 @@ function handleDashboardSortChange(event) {
 
   dashboardSorts[section] = event.target.value || DASHBOARD_SORT_DEFAULT;
   renderDashboardTables();
+}
+
+function handleDueSortChange(event) {
+  const table = clean(event.target.dataset.table);
+  if (!table) return;
+
+  dueSorts[table] = event.target.value || DUE_SORT_DEFAULT;
+  if (table === 'drill') {
+    renderDrillTests();
+    return;
+  }
+
+  if (table === 'uniform') {
+    renderUniformTests();
+    return;
+  }
+
+  renderMilestonesAndSdas();
+}
+
+function handlePrintMilestonesReport() {
+  renderPrintableMilestonesReport();
+  document.body.classList.add('printing-report');
+  window.print();
 }
 
 function parseCSV(text) {
@@ -243,7 +425,7 @@ function parseCSV(text) {
 
 function analyzeCadet(raw) {
   const achievement = clean(raw.AchvName);
-  const requirementRow = requirements.find(row => clean(row.Achievement).toLowerCase() === achievement.toLowerCase()) || {};
+  const requirementRow = findRequirementForAchievement(achievement);
   const rank = clean(requirementRow.Rank || requirementRow.Grade);
   const rankOrder = achievementOrder(achievement);
   const dueDate = parseDate(raw.NextApprovalDate) || addDays(parseDate(raw.AprDate) || parseDate(raw.JoinDate), 56);
@@ -269,6 +451,7 @@ function analyzeCadet(raw) {
     achievement,
     rank,
     rankOrder,
+    milestoneLabel: milestoneLabel(achievement),
     dueDate,
     daysUntil,
     status,
@@ -279,6 +462,10 @@ function analyzeCadet(raw) {
     missing,
     progress: Math.round((completed / total) * 100)
   };
+}
+
+function findRequirementForAchievement(achievement) {
+  return requirements.find(row => clean(row.Achievement).toLowerCase() === clean(achievement).toLowerCase()) || {};
 }
 
 function buildChecks(cadet, requirementRow) {
@@ -356,6 +543,9 @@ function renderAll() {
   renderStats();
   renderDashboardTables();
   renderAllCadets();
+  renderMilestonesAndSdas();
+  renderDrillTests();
+  renderUniformTests();
   renderExcludedCadets();
   renderRequirements();
 }
@@ -434,6 +624,18 @@ function sortDashboardRows(rows, sortKey = DASHBOARD_SORT_DEFAULT) {
   return sorted;
 }
 
+function sortPromotionRows(rows) {
+  return [...rows].sort((left, right) =>
+    compareRank(left, right) || compareDueDate(left, right) || compareText(left.name, right.name)
+  );
+}
+
+function sortDueRows(rows, direction = DUE_SORT_DEFAULT) {
+  return [...rows].sort((left, right) =>
+    compareDueDateWithDirection(left, right, direction) || compareRank(left, right) || compareText(left.name, right.name)
+  );
+}
+
 function renderAllCadets() {
   let rows = [...cadets];
   const query = document.getElementById('searchInput').value.toLowerCase();
@@ -453,6 +655,440 @@ function renderAllCadets() {
     compact: false,
     emptyMessage: 'No cadets match this view.'
   });
+}
+
+function renderMilestonesAndSdas() {
+  const allMilestoneRows = getMilestoneRows();
+  const milestoneRows = getVisibleMilestoneRows();
+  const allSdaRows = getSdaRows();
+  const sdaRows = getVisibleSdaRows();
+  const excludedMilestones = getExcludedMilestoneCadets();
+  const excludedSdas = getExcludedSdaCadets();
+
+  setSectionCount('milestoneCount', milestoneRows.length);
+  setSectionCount('sdaCount', sdaRows.length);
+  document.getElementById('milestoneExcludedCount').textContent = `${excludedMilestones.length} excluded`;
+  document.getElementById('sdaExcludedCount').textContent = `${excludedSdas.length} excluded`;
+  renderMilestoneSummary(milestoneRows, allMilestoneRows);
+  renderMilestoneTable(document.getElementById('milestoneTable'), milestoneRows, allMilestoneRows.length);
+  renderSdaTable(document.getElementById('sdaTable'), sdaRows, allSdaRows.length);
+  renderMilestoneSdaExclusions(excludedMilestones, excludedSdas);
+}
+
+function renderMilestoneSummary(rows, allRows) {
+  const container = document.getElementById('milestoneSummary');
+  container.innerHTML = MILESTONE_ACHIEVEMENTS
+    .map(milestone => {
+      const count = rows.filter(cadet => clean(cadet.achievement).toLowerCase() === milestone.achievement.toLowerCase()).length;
+      const totalCount = allRows.filter(cadet => clean(cadet.achievement).toLowerCase() === milestone.achievement.toLowerCase()).length;
+      const excludedCount = totalCount - count;
+      const action = count ? 'bulk-exclude-milestone' : 'bulk-include-milestone';
+      const buttonLabel = totalCount ? (count ? 'Exclude All Shown' : 'Re-add Excluded') : 'No Cadets';
+      const buttonClass = count ? 'exclude' : 'include';
+      const disabled = totalCount ? '' : 'disabled';
+      return `<div class="summary-card">
+        <div class="summary-num">${count}</div>
+        <div class="summary-label">${esc(milestone.label)}${excludedCount ? ` | ${excludedCount} excluded` : ''}</div>
+        <button class="action-chip ${buttonClass}" type="button" data-action="${action}" data-achievement="${esc(milestone.achievement)}" ${disabled}>${buttonLabel}</button>
+      </div>`;
+    })
+    .join('');
+}
+
+function renderMilestoneTable(table, rows, totalRows) {
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to see milestone tests.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = `<tr><td class="empty">${totalRows ? 'All loaded milestone cadets are currently excluded.' : 'No loaded cadets are currently working on milestone tests.'}</td></tr>`;
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>Cadet</th>
+      <th>Milestone</th>
+      <th>Due</th>
+      <th>Status</th>
+      <th>Progress</th>
+      <th>Requirements</th>
+    </tr></thead><tbody>` +
+    rows.map(cadet => `<tr>
+      <td>
+        <strong>${esc(cadet.name || 'Unknown')}</strong><br>
+        <span class="note">CAPID ${esc(cadet.capid || '')}</span>
+        <div class="cadet-actions"><button class="action-chip exclude" type="button" data-action="exclude-milestone" data-key="${esc(cadet.key)}">Exclude</button></div>
+      </td>
+      <td><strong class="achievement-name">${esc(cadet.achievement)}</strong>${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}</td>
+      <td>${formatDate(cadet.dueDate)}<br><span class="note">${daysText(cadet.daysUntil)}</span></td>
+      <td><span class="badge ${statusClass(cadet.status)}">${cadet.status}</span></td>
+      <td><span class="progress"><span style="width:${cadet.progress}%"></span></span>${cadet.completed}/${cadet.total}</td>
+      <td><div class="missing-list">${renderMilestoneRequirements(cadet)}</div></td>
+    </tr>`).join('') +
+    '</tbody>';
+}
+
+function renderSdaTable(table, rows, totalRows) {
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to see SDA requirements.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = `<tr><td class="empty">${totalRows ? 'All loaded SDA cadets are currently excluded.' : 'No loaded cadets currently have SDA requirements.'}</td></tr>`;
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>Cadet</th>
+      <th>Achievement</th>
+      <th>Due</th>
+      ${SDA_DISPLAY_REQUIREMENTS.map(item => `<th>${esc(item.label)}</th>`).join('')}
+    </tr></thead><tbody>` +
+    rows.map(cadet => `<tr>
+      <td>
+        <strong>${esc(cadet.name || 'Unknown')}</strong><br>
+        <span class="note">CAPID ${esc(cadet.capid || '')}</span>
+        <div class="cadet-actions"><button class="action-chip exclude" type="button" data-action="exclude-sda" data-key="${esc(cadet.key)}">Exclude</button></div>
+      </td>
+      <td><strong class="achievement-name">${esc(cadet.achievement || 'Unknown')}</strong>${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}</td>
+      <td>${formatDate(cadet.dueDate)}<br><span class="note">${daysText(cadet.daysUntil)}</span></td>
+      ${SDA_DISPLAY_REQUIREMENTS.map(item => `<td>${renderSdaCell(cadet, item)}</td>`).join('')}
+    </tr>`).join('') +
+    '</tbody>';
+}
+
+function renderSdaCell(cadet, item) {
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  const required = hasValue(requirementRow[item.requirementField]);
+  if (!required) return '<span class="badge future">Not required</span>';
+
+  const value = clean(cadet.raw[item.sourceField]);
+  const done = hasValue(value);
+  const detail = done ? `<span class="cell-detail">${esc(value)}</span>` : '';
+  return `<span class="badge ${done ? 'ready' : 'overdue'}">${done ? 'Complete' : 'Missing'}</span>${detail}`;
+}
+
+function renderMilestoneRequirements(cadet) {
+  const displayChecks = MILESTONE_DISPLAY_CHECKS
+    .map(item => {
+      const check = cadet.checks.find(candidate => candidate.name === item.sourceName);
+      return check ? { ...check, name: item.label } : null;
+    })
+    .filter(Boolean);
+
+  if (!displayChecks.length) return '<span class="badge future">No tracked items</span>';
+
+  return displayChecks
+    .map(check => `<span class="pill ${check.done ? 'pill-complete' : 'pill-incomplete'}">${esc(check.name)}</span>`)
+    .join('');
+}
+
+function renderDrillTests() {
+  const rows = getVisibleDrillRows();
+  const excludedDrills = getExcludedDrillCadets();
+
+  setSectionCount('drillCount', rows.length);
+  document.getElementById('drillExcludedCount').textContent = `${excludedDrills.length} excluded`;
+  renderDrillTable(document.getElementById('drillTable'), rows);
+  renderDrillExclusions(excludedDrills);
+}
+
+function renderDrillTable(table, rows) {
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to see drill tests.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = '<tr><td class="empty">No cadets match the drill test filters.</td></tr>';
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>Cadet</th>
+      <th>Achievement</th>
+      <th>Due</th>
+      <th>Drill Status</th>
+    </tr></thead><tbody>` +
+    rows.map(cadet => `<tr>
+      <td>
+        <strong>${esc(cadet.name || 'Unknown')}</strong><br>
+        <span class="note">CAPID ${esc(cadet.capid || '')}</span>
+        <div class="cadet-actions"><button class="action-chip exclude" type="button" data-action="exclude-drill" data-key="${esc(cadet.key)}">Exclude</button></div>
+      </td>
+      <td><strong class="achievement-name">${esc(cadet.achievement || 'Unknown')}</strong>${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}</td>
+      <td>${formatDate(cadet.dueDate)}<br><span class="note">${daysText(cadet.daysUntil)}</span></td>
+      <td>${renderDrillStatus(cadet)}</td>
+    </tr>`).join('') +
+    '</tbody>';
+}
+
+function renderDrillStatus(cadet) {
+  return hasCompleteDrillTest(cadet)
+    ? '<span class="badge ready">Complete</span>'
+    : '<span class="badge overdue">Needs Drill</span>';
+}
+
+function renderDrillExclusions(drillRows) {
+  renderScopedExclusionList({
+    containerId: 'excludedDrillsList',
+    rows: drillRows,
+    emptyMessage: 'No cadets are excluded from drill tests.',
+    noDataMessage: 'Upload a cadet report to manage drill exclusions.',
+    action: 'include-drill',
+    buttonLabel: 'Re-add to Drills'
+  });
+}
+
+function renderUniformTests() {
+  const rows = getVisibleUniformRows();
+  const excludedUniforms = getExcludedUniformCadets();
+
+  setSectionCount('uniformCount', rows.length);
+  document.getElementById('uniformExcludedCount').textContent = `${excludedUniforms.length} excluded`;
+  renderUniformTable(document.getElementById('uniformTable'), rows);
+  renderUniformExclusions(excludedUniforms);
+}
+
+function renderUniformTable(table, rows) {
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to see uniform tests.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = '<tr><td class="empty">No cadets match the uniform test filters.</td></tr>';
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>Cadet</th>
+      <th>Achievement</th>
+      <th>Due</th>
+      <th>Uniform Status</th>
+    </tr></thead><tbody>` +
+    rows.map(cadet => `<tr>
+      <td>
+        <strong>${esc(cadet.name || 'Unknown')}</strong><br>
+        <span class="note">CAPID ${esc(cadet.capid || '')}</span>
+        <div class="cadet-actions"><button class="action-chip exclude" type="button" data-action="exclude-uniform" data-key="${esc(cadet.key)}">Exclude</button></div>
+      </td>
+      <td><strong class="achievement-name">${esc(cadet.achievement || 'Unknown')}</strong>${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}</td>
+      <td>${formatDate(cadet.dueDate)}<br><span class="note">${daysText(cadet.daysUntil)}</span></td>
+      <td>${renderUniformStatus(cadet)}</td>
+    </tr>`).join('') +
+    '</tbody>';
+}
+
+function renderUniformStatus(cadet) {
+  return hasCompleteUniformTest(cadet)
+    ? '<span class="badge ready">Complete</span>'
+    : '<span class="badge overdue">Needs Uniform</span>';
+}
+
+function renderUniformExclusions(uniformRows) {
+  renderScopedExclusionList({
+    containerId: 'excludedUniformsList',
+    rows: uniformRows,
+    emptyMessage: 'No cadets are excluded from uniform tests.',
+    noDataMessage: 'Upload a cadet report to manage uniform exclusions.',
+    action: 'include-uniform',
+    buttonLabel: 'Re-add to Uniforms'
+  });
+}
+
+function renderPrintableMilestonesReport() {
+  const report = document.getElementById('milestonesPrintReport');
+  const presentationRequirement = SDA_REQUIREMENTS.find(item => item.sourceField === 'OralPresentationDate');
+  const printedOn = dateFormatter.format(new Date());
+
+  const milestoneRows = sortPrintableDueRows(getVisibleMilestoneRows()).map(cadet => [
+    cadet.name || 'Unknown',
+    cadet.achievement || 'Unknown',
+    weeksFromDueText(cadet),
+    getCheckStatusLabel(cadet, 'Aerospace Test or Module'),
+    getCheckStatusLabel(cadet, 'Leadership Test or Module'),
+    getCheckStatusLabel(cadet, 'Drill')
+  ]);
+  const sdaRows = sortPrintableDueRows(getVisibleSdaRows()).map(cadet => [
+    cadet.name || 'Unknown',
+    weeksFromDueText(cadet),
+    getSdaRequirementStatusLabel(cadet, presentationRequirement)
+  ]);
+  const drillRows = sortPrintableDueRows(getVisibleDrillRows()).map(cadet => [
+    cadet.name || 'Unknown',
+    weeksFromDueText(cadet),
+    getDrillTestRequiredLabel(cadet)
+  ]);
+  const uniformNames = getVisibleUniformRows().map(cadet => cadet.name || 'Unknown');
+
+  report.innerHTML = `
+    <div class="print-report-header">
+      <h1>Milestones, SDAs, Drill & Uniform</h1>
+      <p>${esc(loadedFileName || 'No report file loaded')} | Printed ${esc(printedOn)}</p>
+    </div>
+    ${renderPrintTable(
+      'Milestones',
+      ['Name', 'Promotion Name', 'Weeks From Due', 'Aerospace Tests', 'Leadership Test', 'Drill'],
+      milestoneRows,
+      'No milestone cadets are shown with the current exclusions.'
+    )}
+    ${renderPrintTable(
+      'SDAs',
+      ['Name', 'Weeks From Due', 'Presentation Status'],
+      sdaRows,
+      'No SDA cadets are shown with the current exclusions.'
+    )}
+    ${renderPrintTable(
+      'Drill',
+      ['Name', 'Weeks From Due', 'Drill Test Required'],
+      drillRows,
+      'No drill cadets match the current filters and exclusions.'
+    )}
+    ${renderPrintNameColumns(
+      'Uniform',
+      uniformNames,
+      'No uniform cadets match the current filters and exclusions.'
+    )}
+  `;
+}
+
+function renderPrintTable(title, headers, rows, emptyMessage) {
+  return `<section class="print-section">
+    <h2>${esc(title)}</h2>
+    <table class="print-table">
+      <thead><tr>${headers.map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${rows.length
+    ? rows.map(row => `<tr>${row.map(value => `<td>${esc(value)}</td>`).join('')}</tr>`).join('')
+    : `<tr><td class="print-empty" colspan="${headers.length}">${esc(emptyMessage)}</td></tr>`}
+      </tbody>
+    </table>
+  </section>`;
+}
+
+function renderPrintNameColumns(title, names, emptyMessage) {
+  const rows = [];
+  for (let index = 0; index < names.length; index += 3) {
+    rows.push(names.slice(index, index + 3));
+  }
+
+  return `<section class="print-section">
+    <h2>${esc(title)}</h2>
+    <table class="print-table print-name-columns">
+      <thead><tr><th>Name</th><th>Name</th><th>Name</th></tr></thead>
+      <tbody>
+        ${rows.length
+    ? rows.map(row => `<tr>${[0, 1, 2].map(index => `<td>${esc(row[index] || '')}</td>`).join('')}</tr>`).join('')
+    : `<tr><td class="print-empty" colspan="3">${esc(emptyMessage)}</td></tr>`}
+      </tbody>
+    </table>
+  </section>`;
+}
+
+function sortPrintableDueRows(rows) {
+  return [...rows].sort((left, right) =>
+    printableDuePriority(left) - printableDuePriority(right) ||
+    compareDueDate(left, right) ||
+    compareRank(left, right) ||
+    compareText(left.name, right.name)
+  );
+}
+
+function printableDuePriority(cadet) {
+  if (!(cadet.dueDate instanceof Date)) return 2;
+  return cadet.daysUntil < 0 ? 0 : 1;
+}
+
+function weeksFromDueText(cadet) {
+  const days = cadet.daysUntil;
+  if (days === null || days === undefined || Number.isNaN(days)) return 'No due date';
+  if (days === 0) return 'Due this week';
+
+  const weeks = Math.max(1, Math.ceil(Math.abs(days) / 7));
+  const label = `${weeks} week${weeks === 1 ? '' : 's'}`;
+  return days < 0 ? `${label} late` : `${label} away`;
+}
+
+function getCheckStatusLabel(cadet, sourceName) {
+  const check = cadet.checks.find(candidate => candidate.name === sourceName);
+  if (!check) return 'Not required';
+  return check.done ? 'Complete' : 'Missing';
+}
+
+function isCheckComplete(cadet, sourceName) {
+  const check = cadet.checks.find(candidate => candidate.name === sourceName);
+  return Boolean(check && check.done);
+}
+
+function getSdaRequirementStatusLabel(cadet, item) {
+  if (!item) return 'Not required';
+
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  const required = hasValue(requirementRow[item.requirementField]);
+  if (!required) return 'Not required';
+
+  return hasValue(cadet.raw[item.sourceField]) ? 'Complete' : 'Missing';
+}
+
+function getDrillTestRequiredLabel(cadet) {
+  const achievement = clean(cadet.achievement);
+
+  if (achievement.toLowerCase() === 'wright brothers') {
+    return isCheckComplete(cadet, 'Leadership Test or Module')
+      ? 'Wright Brothers Drill Test'
+      : 'Wright Brothers Leadership Test Must Be Completed First';
+  }
+
+  const match = achievement.match(/Achievement\s+(\d+)/i);
+  if (match) return `Drill Test ${match[1]}`;
+
+  return achievement ? `${achievement} Drill Test` : 'Drill Test';
+}
+
+function renderMilestoneSdaExclusions(milestoneRows, sdaRows) {
+  renderScopedExclusionList({
+    containerId: 'excludedMilestonesList',
+    rows: milestoneRows,
+    emptyMessage: 'No cadets are excluded from milestone tests.',
+    noDataMessage: 'Upload a cadet report to manage milestone exclusions.',
+    action: 'include-milestone',
+    buttonLabel: 'Re-add to Milestones'
+  });
+  renderScopedExclusionList({
+    containerId: 'excludedSdasList',
+    rows: sdaRows,
+    emptyMessage: 'No cadets are excluded from SDA requirements.',
+    noDataMessage: 'Upload a cadet report to manage SDA exclusions.',
+    action: 'include-sda',
+    buttonLabel: 'Re-add to SDAs'
+  });
+}
+
+function renderScopedExclusionList({ containerId, rows, emptyMessage, noDataMessage, action, buttonLabel }) {
+  const container = document.getElementById(containerId);
+
+  if (!cadets.length) {
+    container.innerHTML = `<div class="empty">${esc(noDataMessage)}</div>`;
+    return;
+  }
+
+  if (!rows.length) {
+    container.innerHTML = `<div class="empty">${esc(emptyMessage)}</div>`;
+    return;
+  }
+
+  container.innerHTML = rows
+    .map(cadet => `<div class="excluded-item">
+      <div class="excluded-meta">
+        <strong>${esc(cadet.name || 'Unknown')}</strong>
+        <span class="note">${esc(cadet.achievement || 'Unknown')} | CAPID ${esc(cadet.capid || '')}</span>
+      </div>
+      <button class="action-chip include" type="button" data-action="${esc(action)}" data-key="${esc(cadet.key)}">${esc(buttonLabel)}</button>
+    </div>`)
+    .join('');
 }
 
 function renderCadetTable(table, rows, options = {}) {
@@ -555,6 +1191,16 @@ function compareDueDate(left, right) {
   return normalizedDateValue(left.dueDate) - normalizedDateValue(right.dueDate);
 }
 
+function compareDueDateWithDirection(left, right, direction = DUE_SORT_DEFAULT) {
+  const leftValue = normalizedDateValue(left.dueDate);
+  const rightValue = normalizedDateValue(right.dueDate);
+
+  if (leftValue === rightValue) return 0;
+  if (leftValue === Number.MAX_SAFE_INTEGER) return 1;
+  if (rightValue === Number.MAX_SAFE_INTEGER) return -1;
+  return direction === 'dueDesc' ? rightValue - leftValue : leftValue - rightValue;
+}
+
 function compareRank(left, right) {
   return (left.rankOrder - right.rankOrder) || compareText(left.rank, right.rank);
 }
@@ -597,6 +1243,28 @@ function populateAchievementFilter() {
   select.value = achievements.includes(currentValue) ? currentValue : 'all';
 }
 
+function populateDrillAchievementFilter() {
+  const select = document.getElementById('drillAchievementFilter');
+  const currentValue = select.value;
+  const achievements = [...new Set(cadets.filter(requiresDrill).map(cadet => cadet.achievement).filter(Boolean))]
+    .sort((left, right) => achievementOrder(left) - achievementOrder(right) || left.localeCompare(right));
+
+  select.innerHTML = '<option value="all">All achievements</option>' +
+    achievements.map(achievement => `<option value="${esc(achievement)}">${esc(achievement)}</option>`).join('');
+  select.value = achievements.includes(currentValue) ? currentValue : 'all';
+}
+
+function populateUniformAchievementFilter() {
+  const select = document.getElementById('uniformAchievementFilter');
+  const currentValue = select.value;
+  const achievements = [...new Set(cadets.filter(requiresUniform).map(cadet => cadet.achievement).filter(Boolean))]
+    .sort((left, right) => achievementOrder(left) - achievementOrder(right) || left.localeCompare(right));
+
+  select.innerHTML = '<option value="all">All achievements</option>' +
+    achievements.map(achievement => `<option value="${esc(achievement)}">${esc(achievement)}</option>`).join('');
+  select.value = achievements.includes(currentValue) ? currentValue : 'all';
+}
+
 function achievementOrder(achievement) {
   const order = requirements.map(row => clean(row.Achievement).toLowerCase());
   const index = order.indexOf(clean(achievement).toLowerCase());
@@ -605,6 +1273,124 @@ function achievementOrder(achievement) {
   const match = achievement.match(/Achievement\s+(\d+)/i);
   const numberValue = Number.parseInt(match ? match[1] : '', 10);
   return Number.isFinite(numberValue) ? numberValue : 999;
+}
+
+function milestoneLabel(achievement) {
+  const milestone = MILESTONE_ACHIEVEMENTS.find(item =>
+    item.achievement.toLowerCase() === clean(achievement).toLowerCase()
+  );
+  return milestone ? milestone.label : '';
+}
+
+function requiresSda(cadet) {
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  return SDA_REQUIREMENTS.some(item => hasValue(requirementRow[item.requirementField]));
+}
+
+function requiresDrill(cadet) {
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  return hasValue(requirementRow.Drill);
+}
+
+function requiresUniform(cadet) {
+  const requirementRow = findRequirementForAchievement(cadet.achievement);
+  return hasValue(requirementRow.Uniform);
+}
+
+function hasMissingDrillTest(cadet) {
+  return requiresDrill(cadet) && !hasCompleteDrillTest(cadet);
+}
+
+function hasCompleteDrillTest(cadet) {
+  return hasValue(cadet.raw.DrillDate) && number(cadet.raw.DrillScore) > 0;
+}
+
+function hasMissingUniformTest(cadet) {
+  return requiresUniform(cadet) && !hasCompleteUniformTest(cadet);
+}
+
+function hasCompleteUniformTest(cadet) {
+  return hasValue(cadet.raw.UniformDate);
+}
+
+function getMilestoneRows() {
+  return sortPromotionRows(cadets.filter(cadet => cadet.milestoneLabel));
+}
+
+function getVisibleMilestoneRows() {
+  return sortDueRows(
+    getMilestoneRows().filter(cadet => !excludedMilestoneKeys.has(cadet.key)),
+    dueSorts.milestone
+  );
+}
+
+function getSdaRows() {
+  return sortPromotionRows(cadets.filter(requiresSda));
+}
+
+function getVisibleSdaRows() {
+  return sortDueRows(
+    getSdaRows().filter(cadet => !excludedSdaKeys.has(cadet.key)),
+    dueSorts.sda
+  );
+}
+
+function getVisibleDrillRows() {
+  let rows = cadets.filter(cadet => requiresDrill(cadet) && !excludedDrillKeys.has(cadet.key));
+  const query = document.getElementById('drillSearchInput').value.toLowerCase();
+  const drillStatus = document.getElementById('drillStatusFilter').value;
+  const achievement = document.getElementById('drillAchievementFilter').value;
+
+  if (query) {
+    rows = rows.filter(cadet =>
+      [cadet.name, cadet.capid, cadet.email, cadet.achievement].join(' ').toLowerCase().includes(query)
+    );
+  }
+
+  if (drillStatus === 'needs') rows = rows.filter(hasMissingDrillTest);
+  if (drillStatus === 'complete') rows = rows.filter(hasCompleteDrillTest);
+  if (achievement !== 'all') rows = rows.filter(cadet => cadet.achievement === achievement);
+
+  return sortDueRows(rows, dueSorts.drill);
+}
+
+function getVisibleUniformRows() {
+  let rows = cadets.filter(cadet => requiresUniform(cadet) && !excludedUniformKeys.has(cadet.key));
+  const query = document.getElementById('uniformSearchInput').value.toLowerCase();
+  const uniformStatus = document.getElementById('uniformStatusFilter').value;
+  const achievement = document.getElementById('uniformAchievementFilter').value;
+
+  if (query) {
+    rows = rows.filter(cadet =>
+      [cadet.name, cadet.capid, cadet.email, cadet.achievement].join(' ').toLowerCase().includes(query)
+    );
+  }
+
+  if (uniformStatus === 'needs') rows = rows.filter(hasMissingUniformTest);
+  if (uniformStatus === 'complete') rows = rows.filter(hasCompleteUniformTest);
+  if (achievement !== 'all') rows = rows.filter(cadet => cadet.achievement === achievement);
+
+  return sortDueRows(rows, dueSorts.uniform);
+}
+
+function getVisibleMilestoneCadets() {
+  return cadets.filter(cadet => cadet.milestoneLabel && !excludedMilestoneKeys.has(cadet.key));
+}
+
+function getExcludedMilestoneCadets() {
+  return sortPromotionRows(cadets.filter(cadet => cadet.milestoneLabel && excludedMilestoneKeys.has(cadet.key)));
+}
+
+function getExcludedSdaCadets() {
+  return sortPromotionRows(cadets.filter(cadet => requiresSda(cadet) && excludedSdaKeys.has(cadet.key)));
+}
+
+function getExcludedDrillCadets() {
+  return sortPromotionRows(cadets.filter(cadet => requiresDrill(cadet) && excludedDrillKeys.has(cadet.key)));
+}
+
+function getExcludedUniformCadets() {
+  return sortPromotionRows(cadets.filter(cadet => requiresUniform(cadet) && excludedUniformKeys.has(cadet.key)));
 }
 
 function getDashboardCadets() {
@@ -616,20 +1402,60 @@ function getExcludedLoadedCadets() {
 }
 
 function loadExcludedCadets() {
+  return loadStoredSet(EXCLUDED_STORAGE_KEY, 'stored dashboard exclusions');
+}
+
+function loadMilestoneExclusions() {
+  return loadStoredSet(MILESTONE_EXCLUDED_STORAGE_KEY, 'stored milestone exclusions');
+}
+
+function loadSdaExclusions() {
+  return loadStoredSet(SDA_EXCLUDED_STORAGE_KEY, 'stored SDA exclusions');
+}
+
+function loadDrillExclusions() {
+  return loadStoredSet(DRILL_EXCLUDED_STORAGE_KEY, 'stored drill exclusions');
+}
+
+function loadUniformExclusions() {
+  return loadStoredSet(UNIFORM_EXCLUDED_STORAGE_KEY, 'stored uniform exclusions');
+}
+
+function loadStoredSet(storageKey, description) {
   try {
-    const stored = JSON.parse(localStorage.getItem(EXCLUDED_STORAGE_KEY) || '[]');
+    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
     return new Set(Array.isArray(stored) ? stored.map(value => clean(value)) : []);
   } catch (error) {
-    console.warn('Unable to read stored dashboard exclusions.', error);
+    console.warn(`Unable to read ${description}.`, error);
     return new Set();
   }
 }
 
 function persistExcludedCadets() {
+  persistStoredSet(EXCLUDED_STORAGE_KEY, excludedCadetKeys, 'dashboard exclusions');
+}
+
+function persistMilestoneExclusions() {
+  persistStoredSet(MILESTONE_EXCLUDED_STORAGE_KEY, excludedMilestoneKeys, 'milestone exclusions');
+}
+
+function persistSdaExclusions() {
+  persistStoredSet(SDA_EXCLUDED_STORAGE_KEY, excludedSdaKeys, 'SDA exclusions');
+}
+
+function persistDrillExclusions() {
+  persistStoredSet(DRILL_EXCLUDED_STORAGE_KEY, excludedDrillKeys, 'drill exclusions');
+}
+
+function persistUniformExclusions() {
+  persistStoredSet(UNIFORM_EXCLUDED_STORAGE_KEY, excludedUniformKeys, 'uniform exclusions');
+}
+
+function persistStoredSet(storageKey, values, description) {
   try {
-    localStorage.setItem(EXCLUDED_STORAGE_KEY, JSON.stringify([...excludedCadetKeys]));
+    localStorage.setItem(storageKey, JSON.stringify([...values]));
   } catch (error) {
-    console.warn('Unable to save dashboard exclusions.', error);
+    console.warn(`Unable to save ${description}.`, error);
   }
 }
 
