@@ -31,7 +31,7 @@
           </div>
           <button id="chooseFileButton" class="primary-button" type="button">Choose File</button>
         </div>
-        <div id="uploadStatusMessage" data-status-message class="status-banner info" role="status">Upload a cadet full-track report to continue.</div>
+        <div data-status-message class="status-banner info" role="status">Upload a cadet full-track report to continue.</div>
       </div>
     </section>
   </main>
@@ -44,7 +44,7 @@
       </div>
       <button id="uploadAnotherButton" class="secondary-button" type="button">Change Report</button>
     </div>
-    <div id="dashboardStatusMessage" data-status-message class="status-banner info" role="status">Cadet report loaded.</div>
+    <div data-status-message class="status-banner info" role="status">Cadet report loaded.</div>
 
     <nav class="tabs">
       <button class="tab active" data-view="dashboard">Main Dashboard</button>
@@ -62,7 +62,7 @@
             <div class="section-tools">
               <label class="section-sort">
                 <span>Sort by</span>
-                <select id="overdueSort" class="dashboard-sort" data-section="overdue">
+                <select class="dashboard-sort" data-section="overdue">
                   <option value="dueDate">Due date</option>
                   <option value="name">Name</option>
                   <option value="rank">Rank</option>
@@ -80,7 +80,7 @@
             <div class="section-tools">
               <label class="section-sort">
                 <span>Sort by</span>
-                <select id="soonSort" class="dashboard-sort" data-section="soon">
+                <select class="dashboard-sort" data-section="soon">
                   <option value="dueDate">Due date</option>
                   <option value="name">Name</option>
                   <option value="rank">Rank</option>
@@ -99,7 +99,7 @@
             <div class="section-tools">
               <label class="section-sort">
                 <span>Sort by</span>
-                <select id="readySort" class="dashboard-sort" data-section="ready">
+                <select class="dashboard-sort" data-section="ready">
                   <option value="dueDate">Due date</option>
                   <option value="name">Name</option>
                   <option value="rank">Rank</option>
@@ -159,7 +159,7 @@
             <div class="section-tools">
               <label class="section-sort">
                 <span>Due</span>
-                <select id="milestoneDueSort" class="due-sort" data-table="milestone">
+                <select class="due-sort" data-table="milestone">
                   <option value="dueAsc">Soonest first</option>
                   <option value="dueDesc">Latest first</option>
                 </select>
@@ -193,7 +193,7 @@
             <div class="section-tools">
               <label class="section-sort">
                 <span>Due</span>
-                <select id="sdaDueSort" class="due-sort" data-table="sda">
+                <select class="due-sort" data-table="sda">
                   <option value="dueAsc">Soonest first</option>
                   <option value="dueDesc">Latest first</option>
                 </select>
@@ -226,7 +226,7 @@
             <div class="section-tools">
               <label class="section-sort">
                 <span>Due</span>
-                <select id="drillDueSort" class="due-sort" data-table="drill">
+                <select class="due-sort" data-table="drill">
                   <option value="dueAsc">Soonest first</option>
                   <option value="dueDesc">Latest first</option>
                 </select>
@@ -268,7 +268,7 @@
             <div class="section-tools">
               <label class="section-sort">
                 <span>Due</span>
-                <select id="uniformDueSort" class="due-sort" data-table="uniform">
+                <select class="due-sort" data-table="uniform">
                   <option value="dueAsc">Soonest first</option>
                   <option value="dueDesc">Latest first</option>
                 </select>
@@ -317,6 +317,6 @@
     <p>Contact: <a href="mailto:amit.sail@njwg.cap.gov">amit.sail@njwg.cap.gov</a></p>
   </footer>
 
-<script src="script.js" defer></script>
+  <script src="script.js" defer></script>
 </body>
 </html>
