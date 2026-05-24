@@ -318,7 +318,7 @@ function handleActionClick(event) {
 }
 
 function bulkExcludeMilestone(achievement) {
-  const visibleRows = getVisibleMilestoneCadets()
+  const visibleRows = getVisibleMilestoneRows()
     .filter(cadet => clean(cadet.achievement).toLowerCase() === clean(achievement).toLowerCase());
 
   if (!visibleRows.length) {
@@ -643,9 +643,7 @@ function renderAllCadets() {
   const achievement = document.getElementById('achievementFilter').value;
 
   if (query) {
-    rows = rows.filter(cadet =>
-      [cadet.name, cadet.capid, cadet.email, cadet.achievement].join(' ').toLowerCase().includes(query)
-    );
+    rows = rows.filter(cadet => matchesCadetSearch(cadet, query));
   }
   if (status !== 'all') rows = rows.filter(cadet => cadet.status === status);
   if (achievement !== 'all') rows = rows.filter(cadet => cadet.achievement === achievement);
@@ -1233,31 +1231,21 @@ function renderRequirements() {
 }
 
 function populateAchievementFilter() {
-  const select = document.getElementById('achievementFilter');
-  const currentValue = select.value;
-  const achievements = [...new Set(cadets.map(cadet => cadet.achievement).filter(Boolean))]
-    .sort((left, right) => achievementOrder(left) - achievementOrder(right) || left.localeCompare(right));
-
-  select.innerHTML = '<option value="all">All achievements</option>' +
-    achievements.map(achievement => `<option value="${esc(achievement)}">${esc(achievement)}</option>`).join('');
-  select.value = achievements.includes(currentValue) ? currentValue : 'all';
+  populateAchievementSelect('achievementFilter', cadets);
 }
 
 function populateDrillAchievementFilter() {
-  const select = document.getElementById('drillAchievementFilter');
-  const currentValue = select.value;
-  const achievements = [...new Set(cadets.filter(requiresDrill).map(cadet => cadet.achievement).filter(Boolean))]
-    .sort((left, right) => achievementOrder(left) - achievementOrder(right) || left.localeCompare(right));
-
-  select.innerHTML = '<option value="all">All achievements</option>' +
-    achievements.map(achievement => `<option value="${esc(achievement)}">${esc(achievement)}</option>`).join('');
-  select.value = achievements.includes(currentValue) ? currentValue : 'all';
+  populateAchievementSelect('drillAchievementFilter', cadets.filter(requiresDrill));
 }
 
 function populateUniformAchievementFilter() {
-  const select = document.getElementById('uniformAchievementFilter');
+  populateAchievementSelect('uniformAchievementFilter', cadets.filter(requiresUniform));
+}
+
+function populateAchievementSelect(selectId, rows) {
+  const select = document.getElementById(selectId);
   const currentValue = select.value;
-  const achievements = [...new Set(cadets.filter(requiresUniform).map(cadet => cadet.achievement).filter(Boolean))]
+  const achievements = [...new Set(rows.map(cadet => cadet.achievement).filter(Boolean))]
     .sort((left, right) => achievementOrder(left) - achievementOrder(right) || left.localeCompare(right));
 
   select.innerHTML = '<option value="all">All achievements</option>' +
@@ -1342,9 +1330,7 @@ function getVisibleDrillRows() {
   const achievement = document.getElementById('drillAchievementFilter').value;
 
   if (query) {
-    rows = rows.filter(cadet =>
-      [cadet.name, cadet.capid, cadet.email, cadet.achievement].join(' ').toLowerCase().includes(query)
-    );
+    rows = rows.filter(cadet => matchesCadetSearch(cadet, query));
   }
 
   if (drillStatus === 'needs') rows = rows.filter(hasMissingDrillTest);
@@ -1361,9 +1347,7 @@ function getVisibleUniformRows() {
   const achievement = document.getElementById('uniformAchievementFilter').value;
 
   if (query) {
-    rows = rows.filter(cadet =>
-      [cadet.name, cadet.capid, cadet.email, cadet.achievement].join(' ').toLowerCase().includes(query)
-    );
+    rows = rows.filter(cadet => matchesCadetSearch(cadet, query));
   }
 
   if (uniformStatus === 'needs') rows = rows.filter(hasMissingUniformTest);
@@ -1373,8 +1357,11 @@ function getVisibleUniformRows() {
   return sortDueRows(rows, dueSorts.uniform);
 }
 
-function getVisibleMilestoneCadets() {
-  return cadets.filter(cadet => cadet.milestoneLabel && !excludedMilestoneKeys.has(cadet.key));
+function matchesCadetSearch(cadet, query) {
+  return [cadet.name, cadet.capid, cadet.email, cadet.achievement]
+    .join(' ')
+    .toLowerCase()
+    .includes(query);
 }
 
 function getExcludedMilestoneCadets() {
