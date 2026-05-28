@@ -19,7 +19,7 @@ const SDA_REQUIREMENTS = [
   { requirementField: 'SDATechnicalWritingAssignmentDate', sourceField: 'TechnicalWritingAssignmentDate', label: 'Writing Date' },
   { requirementField: 'SDATechnicalWritingAssignment', sourceField: 'TechnicalWritingAssignment', label: 'Writing Assignment' }
 ];
-const SDA_DISPLAY_REQUIREMENTS = SDA_REQUIREMENTS.filter(item => item.label !== 'Writing Assignment');
+const SDA_DISPLAY_REQUIREMENTS = SDA_REQUIREMENTS;
 const MILESTONE_DISPLAY_CHECKS = [
   { sourceName: 'Physical Fitness', label: 'Physical Fitness' },
   { sourceName: 'Drill', label: 'Drill' },
@@ -758,27 +758,19 @@ function renderSdaTable(table, rows, totalRows) {
 }
 
 function renderSdaCell(cadet, item) {
-  const requirementRow = findRequirementForAchievement(cadet.achievement);
-  const required = hasValue(requirementRow[item.requirementField]);
-  if (!required) return '<span class="badge future">Not required</span>';
+  const status = getSdaRequirementStatus(cadet, item);
+  if (!status.required) return '<span class="badge future">Not required</span>';
 
-  const value = clean(cadet.raw[item.sourceField]);
-  const done = hasValue(value);
-  const detail = done ? `<span class="cell-detail">${esc(value)}</span>` : '';
-  return `<span class="badge ${done ? 'ready' : 'overdue'}">${done ? 'Complete' : 'Missing'}</span>${detail}`;
+  const detail = status.done ? `<span class="cell-detail">${esc(status.value)}</span>` : '';
+  return `<span class="badge ${status.done ? 'ready' : 'overdue'}">${status.label}</span>${detail}`;
 }
 
 function renderMilestoneRequirements(cadet) {
-  const displayChecks = MILESTONE_DISPLAY_CHECKS
-    .map(item => {
-      const check = cadet.checks.find(candidate => candidate.name === item.sourceName);
-      return check ? { ...check, name: item.label } : null;
-    })
-    .filter(Boolean);
+  const checks = getMilestoneRequirementChecks(cadet);
 
-  if (!displayChecks.length) return '<span class="badge future">No tracked items</span>';
+  if (!checks.length) return '<span class="badge future">No tracked items</span>';
 
-  return displayChecks
+  return checks
     .map(check => `<span class="pill ${check.done ? 'pill-complete' : 'pill-incomplete'}">${esc(check.name)}</span>`)
     .join('');
 }
@@ -899,21 +891,21 @@ function renderUniformExclusions(uniformRows) {
 
 function renderPrintableMilestonesReport() {
   const report = document.getElementById('milestonesPrintReport');
-  const presentationRequirement = SDA_REQUIREMENTS.find(item => item.sourceField === 'OralPresentationDate');
   const printedOn = dateFormatter.format(new Date());
 
   const milestoneRows = sortPrintableDueRows(getVisibleMilestoneRows()).map(cadet => [
-    cadet.name || 'Unknown',
+    printCell(cadet.name || 'Unknown', hasHighlightedMilestonePrintRequirement(cadet) ? 'print-missing' : ''),
     cadet.achievement || 'Unknown',
     weeksFromDueText(cadet),
-    getCheckStatusLabel(cadet, 'Aerospace Test or Module'),
-    getCheckStatusLabel(cadet, 'Leadership Test or Module'),
-    getCheckStatusLabel(cadet, 'Drill')
+    getMissingMilestoneRequirementLabels(cadet).join(', ') || 'None',
+    ...MILESTONE_DISPLAY_CHECKS.map(item => getCheckStatusPrintCell(cadet, item.sourceName))
   ]);
   const sdaRows = sortPrintableDueRows(getVisibleSdaRows()).map(cadet => [
-    cadet.name || 'Unknown',
+    printCell(cadet.name || 'Unknown', hasHighlightedSdaPrintRequirement(cadet) ? 'print-missing' : ''),
+    cadet.achievement || 'Unknown',
     weeksFromDueText(cadet),
-    getSdaRequirementStatusLabel(cadet, presentationRequirement)
+    getMissingSdaRequirementLabels(cadet).join(', ') || 'None',
+    ...SDA_DISPLAY_REQUIREMENTS.map(item => getSdaRequirementPrintCell(cadet, item))
   ]);
   const drillRows = sortPrintableDueRows(getVisibleDrillRows()).map(cadet => [
     cadet.name || 'Unknown',
@@ -929,13 +921,13 @@ function renderPrintableMilestonesReport() {
     </div>
     ${renderPrintTable(
       'Milestones',
-      ['Name', 'Promotion Name', 'Weeks From Due', 'Aerospace Tests', 'Leadership Test', 'Drill'],
+      ['Name', 'Promotion Name', 'Weeks From Due', 'Missing Items', ...MILESTONE_DISPLAY_CHECKS.map(item => item.label)],
       milestoneRows,
       'No milestone cadets are shown with the current exclusions.'
     )}
     ${renderPrintTable(
       'SDAs',
-      ['Name', 'Weeks From Due', 'Presentation Status'],
+      ['Name', 'Achievement', 'Weeks From Due', 'Missing Items', ...SDA_DISPLAY_REQUIREMENTS.map(item => item.label)],
       sdaRows,
       'No SDA cadets are shown with the current exclusions.'
     )}
@@ -960,11 +952,35 @@ function renderPrintTable(title, headers, rows, emptyMessage) {
       <thead><tr>${headers.map(header => `<th>${esc(header)}</th>`).join('')}</tr></thead>
       <tbody>
         ${rows.length
-    ? rows.map(row => `<tr>${row.map(value => `<td>${esc(value)}</td>`).join('')}</tr>`).join('')
+    ? rows.map(row => `<tr>${row.map(renderPrintCell).join('')}</tr>`).join('')
     : `<tr><td class="print-empty" colspan="${headers.length}">${esc(emptyMessage)}</td></tr>`}
       </tbody>
     </table>
   </section>`;
+}
+
+function renderPrintCell(cell) {
+  const normalized = normalizePrintCell(cell);
+  const classAttribute = normalized.className ? ` class="${esc(normalized.className)}"` : '';
+  return `<td${classAttribute}>${esc(normalized.value)}</td>`;
+}
+
+function normalizePrintCell(cell) {
+  if (cell && typeof cell === 'object' && !Array.isArray(cell)) {
+    return {
+      value: cell.value,
+      className: clean(cell.className)
+    };
+  }
+
+  return {
+    value: cell,
+    className: ''
+  };
+}
+
+function printCell(value, className = '') {
+  return { value, className };
 }
 
 function renderPrintNameColumns(title, names, emptyMessage) {
@@ -1016,6 +1032,12 @@ function getCheckStatusLabel(cadet, sourceName) {
   return check.done ? 'Complete' : 'Missing';
 }
 
+function getCheckStatusPrintCell(cadet, sourceName) {
+  const label = getCheckStatusLabel(cadet, sourceName);
+  const highlightMissing = isHighlightedMilestonePrintRequirement(sourceName);
+  return printCell(label, label === 'Missing' && highlightMissing ? 'print-missing' : '');
+}
+
 function isCheckComplete(cadet, sourceName) {
   const check = cadet.checks.find(candidate => candidate.name === sourceName);
   return Boolean(check && check.done);
@@ -1024,11 +1046,79 @@ function isCheckComplete(cadet, sourceName) {
 function getSdaRequirementStatusLabel(cadet, item) {
   if (!item) return 'Not required';
 
+  const status = getSdaRequirementStatus(cadet, item);
+  if (!status.required) return 'Not required';
+
+  return status.label;
+}
+
+function getSdaRequirementPrintCell(cadet, item) {
+  const label = getSdaRequirementStatusLabel(cadet, item);
+  const highlightMissing = isHighlightedSdaPrintRequirement(item);
+  return printCell(label, label === 'Missing' && highlightMissing ? 'print-missing' : '');
+}
+
+function hasHighlightedMilestonePrintRequirement(cadet) {
+  return MILESTONE_DISPLAY_CHECKS.some(item =>
+    isHighlightedMilestonePrintRequirement(item.sourceName) &&
+    getCheckStatusLabel(cadet, item.sourceName) === 'Missing'
+  );
+}
+
+function hasHighlightedSdaPrintRequirement(cadet) {
+  return SDA_DISPLAY_REQUIREMENTS.some(item =>
+    isHighlightedSdaPrintRequirement(item) &&
+    getSdaRequirementStatusLabel(cadet, item) === 'Missing'
+  );
+}
+
+function isHighlightedMilestonePrintRequirement(sourceName) {
+  return ['Aerospace Test or Module', 'Leadership Test or Module'].includes(sourceName);
+}
+
+function isHighlightedSdaPrintRequirement(item) {
+  return item.sourceField === 'OralPresentationDate';
+}
+
+function getSdaRequirementStatus(cadet, item) {
   const requirementRow = findRequirementForAchievement(cadet.achievement);
   const required = hasValue(requirementRow[item.requirementField]);
-  if (!required) return 'Not required';
+  const value = clean(cadet.raw[item.sourceField]);
 
-  return hasValue(cadet.raw[item.sourceField]) ? 'Complete' : 'Missing';
+  return {
+    required,
+    done: required && hasValue(value),
+    value,
+    label: required && hasValue(value) ? 'Complete' : 'Missing'
+  };
+}
+
+function getMilestoneRequirementChecks(cadet) {
+  const featuredChecks = MILESTONE_DISPLAY_CHECKS
+    .map(item => {
+      const check = cadet.checks.find(candidate => candidate.name === item.sourceName);
+      return check ? { ...check, name: item.label, sourceName: item.sourceName } : null;
+    })
+    .filter(Boolean);
+  const featuredNames = new Set(featuredChecks.map(check => check.sourceName));
+  const extraChecks = cadet.checks.filter(check => !featuredNames.has(check.name));
+
+  return [...featuredChecks, ...extraChecks];
+}
+
+function getMissingMilestoneRequirementLabels(cadet) {
+  return getMilestoneRequirementChecks(cadet)
+    .filter(check => !check.done)
+    .map(check => check.name);
+}
+
+function getMissingSdaRequirementLabels(cadet) {
+  return SDA_REQUIREMENTS
+    .filter(item => {
+      const status = getSdaRequirementStatus(cadet, item);
+      return status.required && !status.done;
+    })
+    .map(item => item.label);
 }
 
 function getDrillTestRequiredLabel(cadet) {
