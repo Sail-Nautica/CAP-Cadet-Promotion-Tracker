@@ -894,14 +894,14 @@ function renderPrintableMilestonesReport() {
   const printedOn = dateFormatter.format(new Date());
 
   const milestoneRows = sortPrintableDueRows(getVisibleMilestoneRows()).map(cadet => [
-    printCell(cadet.name || 'Unknown', hasHighlightedMilestonePrintRequirement(cadet) ? 'print-missing' : ''),
+    cadet.name || 'Unknown',
     cadet.achievement || 'Unknown',
     weeksFromDueText(cadet),
     getMissingMilestoneRequirementLabels(cadet).join(', ') || 'None',
     ...MILESTONE_DISPLAY_CHECKS.map(item => getCheckStatusPrintCell(cadet, item.sourceName))
   ]);
   const sdaRows = sortPrintableDueRows(getVisibleSdaRows()).map(cadet => [
-    printCell(cadet.name || 'Unknown', hasHighlightedSdaPrintRequirement(cadet) ? 'print-missing' : ''),
+    cadet.name || 'Unknown',
     cadet.achievement || 'Unknown',
     weeksFromDueText(cadet),
     getMissingSdaRequirementLabels(cadet).join(', ') || 'None',
@@ -960,27 +960,7 @@ function renderPrintTable(title, headers, rows, emptyMessage) {
 }
 
 function renderPrintCell(cell) {
-  const normalized = normalizePrintCell(cell);
-  const classAttribute = normalized.className ? ` class="${esc(normalized.className)}"` : '';
-  return `<td${classAttribute}>${esc(normalized.value)}</td>`;
-}
-
-function normalizePrintCell(cell) {
-  if (cell && typeof cell === 'object' && !Array.isArray(cell)) {
-    return {
-      value: cell.value,
-      className: clean(cell.className)
-    };
-  }
-
-  return {
-    value: cell,
-    className: ''
-  };
-}
-
-function printCell(value, className = '') {
-  return { value, className };
+  return `<td>${esc(cell)}</td>`;
 }
 
 function renderPrintNameColumns(title, names, emptyMessage) {
@@ -1033,9 +1013,7 @@ function getCheckStatusLabel(cadet, sourceName) {
 }
 
 function getCheckStatusPrintCell(cadet, sourceName) {
-  const label = getCheckStatusLabel(cadet, sourceName);
-  const highlightMissing = isHighlightedMilestonePrintRequirement(sourceName);
-  return printCell(label, label === 'Missing' && highlightMissing ? 'print-missing' : '');
+  return getCheckStatusLabel(cadet, sourceName);
 }
 
 function isCheckComplete(cadet, sourceName) {
@@ -1053,31 +1031,7 @@ function getSdaRequirementStatusLabel(cadet, item) {
 }
 
 function getSdaRequirementPrintCell(cadet, item) {
-  const label = getSdaRequirementStatusLabel(cadet, item);
-  const highlightMissing = isHighlightedSdaPrintRequirement(item);
-  return printCell(label, label === 'Missing' && highlightMissing ? 'print-missing' : '');
-}
-
-function hasHighlightedMilestonePrintRequirement(cadet) {
-  return MILESTONE_DISPLAY_CHECKS.some(item =>
-    isHighlightedMilestonePrintRequirement(item.sourceName) &&
-    getCheckStatusLabel(cadet, item.sourceName) === 'Missing'
-  );
-}
-
-function hasHighlightedSdaPrintRequirement(cadet) {
-  return SDA_DISPLAY_REQUIREMENTS.some(item =>
-    isHighlightedSdaPrintRequirement(item) &&
-    getSdaRequirementStatusLabel(cadet, item) === 'Missing'
-  );
-}
-
-function isHighlightedMilestonePrintRequirement(sourceName) {
-  return ['Aerospace Test or Module', 'Leadership Test or Module'].includes(sourceName);
-}
-
-function isHighlightedSdaPrintRequirement(item) {
-  return item.sourceField === 'OralPresentationDate';
+  return getSdaRequirementStatusLabel(cadet, item);
 }
 
 function getSdaRequirementStatus(cadet, item) {
