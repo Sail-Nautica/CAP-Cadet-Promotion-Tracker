@@ -4,6 +4,7 @@ const MILESTONE_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-milestones-v1';
 const SDA_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-sdas-v1';
 const DRILL_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-drills-v1';
 const UNIFORM_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-uniforms-v1';
+const ATTENDANCE_STORAGE_KEY = 'cap-dashboard-attendance-scanner-v1';
 const DASHBOARD_SORT_DEFAULT = 'dueDate';
 const DUE_SORT_DEFAULT = 'dueAsc';
 const MILESTONE_ACHIEVEMENTS = [
@@ -26,6 +27,37 @@ const MILESTONE_DISPLAY_CHECKS = [
   { sourceName: 'Leadership Test or Module', label: 'Leadership Test' },
   { sourceName: 'Aerospace Test or Module', label: 'Aerospace Test' },
   { sourceName: 'Uniform', label: 'Uniform' }
+];
+const CERTIFICATE_MILESTONE_AND_CURRY_PROMOTIONS = [
+  'Achievement 1',
+  'Wright Brothers',
+  'Billy Mitchell',
+  'Amelia Earhart',
+  'Gen Ira C Eaker',
+  'Gen Carl A Spaatz'
+];
+const ATTENDANCE_LISTS = [
+  {
+    key: 'main',
+    label: 'Attendance',
+    checkboxId: 'attendanceTargetMain',
+    countId: 'attendanceMainCount',
+    listId: 'attendanceMainList'
+  },
+  {
+    key: 'noUniform',
+    label: 'NO UNIFORM',
+    checkboxId: 'attendanceTargetNoUniform',
+    countId: 'attendanceNoUniformCount',
+    listId: 'attendanceNoUniformList'
+  },
+  {
+    key: 'noForm',
+    label: 'NO FORM',
+    checkboxId: 'attendanceTargetNoForm',
+    countId: 'attendanceNoFormCount',
+    listId: 'attendanceNoFormList'
+  }
 ];
 const BUILT_IN_REQUIREMENTS_CSV = `Achievement,Rank,Physical Fitness,Leadership,Drill,Aerospace Education,Character Development,Active Participation,Cadet Oath,Uniform,Leadership Expectations,Special Activity,SDAStaffServiceDate,SDAOralPresentationDate,SDATechnicalWritingAssignmentDate,SDATechnicalWritingAssignment
 Achievement 1,C/Amn,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Cadet Welcome Course,None,None,None,None
@@ -57,6 +89,7 @@ let excludedMilestoneKeys = loadMilestoneExclusions();
 let excludedSdaKeys = loadSdaExclusions();
 let excludedDrillKeys = loadDrillExclusions();
 let excludedUniformKeys = loadUniformExclusions();
+let attendanceLists = loadAttendanceLists();
 let loadedFileName = '';
 let dashboardSorts = {
   overdue: DASHBOARD_SORT_DEFAULT,
@@ -99,7 +132,12 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
   document.getElementById('dashboardView').classList.toggle('hidden', btn.dataset.view !== 'dashboard');
   document.getElementById('allView').classList.toggle('hidden', btn.dataset.view !== 'all');
   document.getElementById('milestonesView').classList.toggle('hidden', btn.dataset.view !== 'milestones');
+  document.getElementById('attendanceView').classList.toggle('hidden', btn.dataset.view !== 'attendance');
   document.getElementById('requirementsView').classList.toggle('hidden', btn.dataset.view !== 'requirements');
+
+  if (btn.dataset.view === 'attendance') {
+    window.setTimeout(() => document.getElementById('attendanceScanInput').focus(), 0);
+  }
 }));
 
 document.getElementById('searchInput').addEventListener('input', renderAllCadets);
@@ -112,6 +150,7 @@ document.getElementById('uniformSearchInput').addEventListener('input', renderUn
 document.getElementById('uniformStatusFilter').addEventListener('change', renderUniformTests);
 document.getElementById('uniformAchievementFilter').addEventListener('change', renderUniformTests);
 document.getElementById('printMilestonesButton').addEventListener('click', handlePrintMilestonesReport);
+document.getElementById('attendanceEntryForm').addEventListener('submit', handleAttendanceEntrySubmit);
 window.addEventListener('afterprint', () => document.body.classList.remove('printing-report'));
 document.querySelectorAll('.dashboard-sort').forEach(select => {
   select.value = dashboardSorts[select.dataset.section] || DASHBOARD_SORT_DEFAULT;
@@ -231,6 +270,16 @@ function handleActionClick(event) {
 
   if (action === 'bulk-include-milestone') {
     bulkIncludeMilestone(button.dataset.achievement);
+    return;
+  }
+
+  if (action === 'clear-attendance') {
+    handleClearAttendanceLists();
+    return;
+  }
+
+  if (action === 'export-attendance') {
+    handleExportAttendanceList(button.dataset.list);
     return;
   }
 
@@ -377,6 +426,116 @@ function handlePrintMilestonesReport() {
   renderPrintableMilestonesReport();
   document.body.classList.add('printing-report');
   window.print();
+}
+
+function handleAttendanceEntrySubmit(event) {
+  event.preventDefault();
+
+  const input = document.getElementById('attendanceScanInput');
+  const attendanceNumber = normalizeAttendanceNumber(input.value);
+
+  if (addAttendanceNumber(attendanceNumber)) {
+    input.value = '';
+  }
+
+  input.focus();
+}
+
+function addAttendanceNumber(attendanceNumber) {
+  if (!/^\d{6}$/.test(attendanceNumber)) {
+    setStatusMessage('Enter exactly one 6-digit number.', 'error');
+    return false;
+  }
+
+  const targets = getSelectedAttendanceTargets();
+  if (!targets.length) {
+    setStatusMessage('Choose at least one attendance list before adding a number.', 'error');
+    return false;
+  }
+
+  const addedLabels = [];
+  const duplicateLabels = [];
+
+  targets.forEach(target => {
+    const list = attendanceLists[target.key];
+    if (list.has(attendanceNumber)) {
+      duplicateLabels.push(target.label);
+      return;
+    }
+
+    list.add(attendanceNumber);
+    addedLabels.push(target.label);
+  });
+
+  if (!addedLabels.length) {
+    setStatusMessage(`${attendanceNumber} is already in ${formatLabelList(duplicateLabels)}.`, 'error');
+    return false;
+  }
+
+  persistAttendanceLists();
+  renderAttendanceScanner();
+
+  const duplicateText = duplicateLabels.length
+    ? ` Already in ${formatLabelList(duplicateLabels)}.`
+    : '';
+  setStatusMessage(`${attendanceNumber} added to ${formatLabelList(addedLabels)}.${duplicateText}`, 'success');
+  return true;
+}
+
+function handleClearAttendanceLists() {
+  const totalCount = ATTENDANCE_LISTS.reduce((sum, item) => sum + attendanceLists[item.key].size, 0);
+  if (!totalCount) {
+    setStatusMessage('Attendance scanner lists are already empty.', 'info');
+    return;
+  }
+
+  if (!window.confirm('Clear all Attendance Scanner lists? This cannot be undone.')) {
+    setStatusMessage('Attendance scanner lists were not cleared.', 'info');
+    return;
+  }
+
+  ATTENDANCE_LISTS.forEach(item => attendanceLists[item.key].clear());
+  persistAttendanceLists();
+  renderAttendanceScanner();
+  document.getElementById('attendanceExportOutput').value = '';
+  setStatusMessage('All attendance scanner lists cleared.', 'success');
+}
+
+function handleExportAttendanceList(listKey) {
+  const listConfig = ATTENDANCE_LISTS.find(item => item.key === clean(listKey));
+  if (!listConfig) return;
+
+  const numbers = [...attendanceLists[listConfig.key]];
+  const output = numbers.join(',');
+  const outputElement = document.getElementById('attendanceExportOutput');
+  outputElement.value = output;
+  outputElement.focus();
+  outputElement.select();
+
+  if (!numbers.length) {
+    setStatusMessage(`${listConfig.label} is empty; nothing to export.`, 'error');
+    return;
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(output)
+      .then(() => setStatusMessage(`${listConfig.label} export copied to clipboard.`, 'success'))
+      .catch(() => setStatusMessage(`${listConfig.label} export is ready below. Clipboard copy was blocked.`, 'info'));
+    return;
+  }
+
+  setStatusMessage(`${listConfig.label} export is ready below.`, 'success');
+}
+
+function normalizeAttendanceNumber(value) {
+  return clean(value).replace(/\D/g, '');
+}
+
+function getSelectedAttendanceTargets() {
+  return ATTENDANCE_LISTS.filter(item => {
+    const checkbox = document.getElementById(item.checkboxId);
+    return checkbox && checkbox.checked;
+  });
 }
 
 function parseCSV(text) {
@@ -548,6 +707,7 @@ function renderAll() {
   renderUniformTests();
   renderExcludedCadets();
   renderRequirements();
+  renderAttendanceScanner();
 }
 
 function renderStats() {
@@ -1274,6 +1434,21 @@ function renderRequirements() {
     '</tbody>';
 }
 
+function renderAttendanceScanner() {
+  ATTENDANCE_LISTS.forEach(item => {
+    const numbers = [...attendanceLists[item.key]];
+    const count = document.getElementById(item.countId);
+    const list = document.getElementById(item.listId);
+
+    if (count) count.textContent = formatNumberCount(numbers.length);
+    if (!list) return;
+
+    list.innerHTML = numbers.length
+      ? numbers.map(numberValue => `<span class="attendance-number">${esc(numberValue)}</span>`).join('')
+      : '<div class="empty">No numbers yet.</div>';
+  });
+}
+
 function populateAchievementFilter() {
   populateAchievementSelect('achievementFilter', cadets);
 }
@@ -1452,6 +1627,22 @@ function loadUniformExclusions() {
   return loadStoredSet(UNIFORM_EXCLUDED_STORAGE_KEY, 'stored uniform exclusions');
 }
 
+function loadAttendanceLists() {
+  const fallback = Object.fromEntries(ATTENDANCE_LISTS.map(item => [item.key, new Set()]));
+
+  try {
+    const stored = JSON.parse(localStorage.getItem(ATTENDANCE_STORAGE_KEY) || '{}');
+    ATTENDANCE_LISTS.forEach(item => {
+      const values = Array.isArray(stored[item.key]) ? stored[item.key] : [];
+      fallback[item.key] = new Set(values.map(normalizeAttendanceNumber).filter(value => /^\d{6}$/.test(value)));
+    });
+  } catch (error) {
+    console.warn('Unable to read stored attendance scanner lists.', error);
+  }
+
+  return fallback;
+}
+
 function loadStoredSet(storageKey, description) {
   try {
     const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
@@ -1480,6 +1671,15 @@ function persistDrillExclusions() {
 
 function persistUniformExclusions() {
   persistStoredSet(UNIFORM_EXCLUDED_STORAGE_KEY, excludedUniformKeys, 'uniform exclusions');
+}
+
+function persistAttendanceLists() {
+  try {
+    const payload = Object.fromEntries(ATTENDANCE_LISTS.map(item => [item.key, [...attendanceLists[item.key]]]));
+    localStorage.setItem(ATTENDANCE_STORAGE_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.warn('Unable to save attendance scanner lists.', error);
+  }
 }
 
 function persistStoredSet(storageKey, values, description) {
@@ -1530,6 +1730,16 @@ function statusClass(status) {
 
 function formatCadetCount(count) {
   return `${count} cadet${count === 1 ? '' : 's'}`;
+}
+
+function formatNumberCount(count) {
+  return `${count} number${count === 1 ? '' : 's'}`;
+}
+
+function formatLabelList(labels) {
+  if (labels.length <= 1) return labels[0] || '';
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
+  return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`;
 }
 
 function daysText(days) {

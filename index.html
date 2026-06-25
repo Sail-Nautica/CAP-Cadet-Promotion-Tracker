@@ -11,7 +11,7 @@
   <header>
     <div class="header-title-row">
       <h1>CAP Cadet Promotion Dashboard</h1>
-      <span class="version-badge">Version 0.4.1</span>
+      <span class="version-badge">Version 0.5</span>
     </div>
     <p>Start by loading a cadet full-track report. The dashboard opens after a CSV or Excel workbook is parsed, then identifies overdue promotions, upcoming promotion dates, completed requirements, and missing items.</p>
   </header>
@@ -50,6 +50,8 @@
       <button class="tab active" data-view="dashboard">Main Dashboard</button>
       <button class="tab" data-view="all">All Promotions</button>
       <button class="tab" data-view="milestones">Milestones, SDAs, Drill, & Uniform</button>
+      <button class="tab" data-view="attendance">Attendance Scanner</button>
+      <button class="tab" data-view="printReports">Print Reports</button>
       <button class="tab" data-view="requirements">Requirements Matrix</button>
     </nav>
 
@@ -301,6 +303,126 @@
       </div>
     </section>
 
+    <section id="attendanceView" class="hidden">
+      <div class="attendance-layout">
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Attendance Scanner</h2>
+              <p class="note">Scan or manually enter a 6-digit number, then choose which list receives the next entry.</p>
+            </div>
+          </div>
+
+          <form id="attendanceEntryForm" class="attendance-entry-form">
+            <label class="attendance-entry-label" for="attendanceScanInput">
+              <span>Scan or Manual Entry</span>
+              <input id="attendanceScanInput" type="text" inputmode="numeric" autocomplete="off" placeholder="6-digit number" />
+            </label>
+            <button class="primary-button" type="submit">Add Number</button>
+          </form>
+
+          <div class="attendance-targets" aria-label="Attendance list targets">
+            <label><input id="attendanceTargetMain" type="checkbox" checked /> Attendance</label>
+            <label><input id="attendanceTargetNoUniform" type="checkbox" /> NO UNIFORM</label>
+            <label><input id="attendanceTargetNoForm" type="checkbox" /> NO FORM</label>
+          </div>
+
+          <div data-status-message class="status-banner info" role="status">Ready to scan attendance numbers.</div>
+
+          <div class="attendance-actions">
+            <button class="secondary-button danger-button" type="button" data-action="clear-attendance">Clear All Lists</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-heading">
+            <div>
+              <h2>Export Lists</h2>
+              <p class="note">Exports appear as comma-separated 6-digit numbers.</p>
+            </div>
+          </div>
+          <div class="attendance-export-buttons">
+            <button class="secondary-button" type="button" data-action="export-attendance" data-list="main">Export Attendance</button>
+            <button class="secondary-button" type="button" data-action="export-attendance" data-list="noUniform">Export NO UNIFORM</button>
+            <button class="secondary-button" type="button" data-action="export-attendance" data-list="noForm">Export NO FORM</button>
+          </div>
+          <textarea id="attendanceExportOutput" class="attendance-export-output" readonly placeholder="Export output will appear here."></textarea>
+        </div>
+      </div>
+
+      <div class="attendance-lists-grid">
+        <div class="card attendance-list-panel">
+          <div class="card-heading">
+            <h2>Attendance</h2>
+            <span id="attendanceMainCount" class="badge future">0 numbers</span>
+          </div>
+          <div id="attendanceMainList" class="attendance-number-list"></div>
+        </div>
+
+        <div class="card attendance-list-panel">
+          <div class="card-heading">
+            <h2>NO UNIFORM</h2>
+            <span id="attendanceNoUniformCount" class="badge future">0 numbers</span>
+          </div>
+          <div id="attendanceNoUniformList" class="attendance-number-list"></div>
+        </div>
+
+        <div class="card attendance-list-panel">
+          <div class="card-heading">
+            <h2>NO FORM</h2>
+            <span id="attendanceNoFormCount" class="badge future">0 numbers</span>
+          </div>
+          <div id="attendanceNoFormList" class="attendance-number-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="printReportsView" class="hidden">
+      <div class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Print Reports</h2>
+            <p class="note">Build printable reports from the loaded cadet full-track report.</p>
+          </div>
+          <span id="printReportCount" class="badge future">0 certificates</span>
+        </div>
+
+        <div class="print-report-controls">
+          <label>
+            <span>Report Type</span>
+            <select id="printReportType">
+              <option value="promotionCertificates">Promotion Certificates</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Promotion Options</span>
+            <select id="promotionCertificatePreset">
+              <option value="all">ALL Promotions</option>
+              <option value="milestonesCurry">All Milestones + Curry</option>
+              <option value="custom">Pick Promotions</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Received in Past</span>
+            <div class="inline-input">
+              <input id="promotionCertificateMonths" type="number" min="1" step="1" placeholder="Any" />
+              <span>months</span>
+            </div>
+          </label>
+        </div>
+
+        <div id="promotionCertificateCustomPicker" class="promotion-picker hidden"></div>
+
+        <div class="print-report-actions">
+          <button id="printPromotionCertificatesButton" class="primary-button" type="button">Print Certificates</button>
+        </div>
+
+        <div class="table-wrap"><table id="promotionCertificatePreviewTable"></table></div>
+      </div>
+    </section>
+
     <section id="requirementsView" class="hidden">
       <div class="card">
         <h2>Promotion Requirements Matrix</h2>
@@ -311,6 +433,7 @@
   </main>
 
   <section id="milestonesPrintReport" class="print-report" aria-hidden="true"></section>
+  <section id="printReportsPrintReport" class="print-report" aria-hidden="true"></section>
 
   <footer class="site-footer">
     <p>Made by Amit Sail for the Raritan Valley Composite Squadron.</p>
