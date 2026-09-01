@@ -4,7 +4,9 @@ const MILESTONE_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-milestones-v1';
 const SDA_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-sdas-v1';
 const DRILL_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-drills-v1';
 const UNIFORM_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-uniforms-v1';
+const CERTIFICATE_EXCLUDED_STORAGE_KEY = 'cap-dashboard-excluded-certificates-v1';
 const ATTENDANCE_STORAGE_KEY = 'cap-dashboard-attendance-scanner-v1';
+const SCANNER_MAX_KEY_GAP_MS = 60;
 const DASHBOARD_SORT_DEFAULT = 'dueDate';
 const DUE_SORT_DEFAULT = 'dueAsc';
 const MILESTONE_ACHIEVEMENTS = [
@@ -36,6 +38,29 @@ const CERTIFICATE_MILESTONE_AND_CURRY_PROMOTIONS = [
   'Gen Ira C Eaker',
   'Gen Carl A Spaatz'
 ];
+const CERTIFICATE_TEMPLATES = {
+  'Achievement 1': { title: 'Achievement 1', rank: 'C/Amn', layout: 'enlisted', badge: 'assets/certificates/insignia-amn.png', honoree: 'Major General John F. Curry' },
+  'Achievement 2': { title: 'Achievement 2', rank: 'C/A1C', layout: 'enlisted', badge: 'assets/certificates/insignia-a1c.png', honoree: 'General of the Air Force Hap Arnold' },
+  'Achievement 3': { title: 'Achievement 3', rank: 'C/SrA', layout: 'enlisted', badge: 'assets/certificates/insignia-sra.png', honoree: 'Colonel Mary Feik' },
+  'Wright Brothers': { title: 'Wright Brothers', titleSuffix: 'Milestone Award', rank: 'C/SSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-ssgt.png', honoree: 'Orville & Wilbur Wright' },
+  'Achievement 4': { title: 'Achievement 4', rank: 'C/TSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-tsgt.png', honoree: 'Captain Eddie Rickenbacker' },
+  'Achievement 5': { title: 'Achievement 5', rank: 'C/MSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-msgt.png' },
+  'Achievement 6': { title: 'Achievement 6', rank: 'C/SMSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-smsgt.png', honoree: 'General Jimmy Doolittle' },
+  'Achievement 7': { title: 'Achievement 7', rank: 'C/CMSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-cmsgt.png', honoree: 'Dr. Robert H. Goddard' },
+  'Achievement 8': { title: 'Achievement 8', rank: null, layout: 'enlisted', badge: 'assets/certificates/insignia-cmsgt.png', honoree: 'Neil Armstrong' },
+  'Billy Mitchell': { title: 'Brigadier General Billy Mitchell', titleSuffix: 'Milestone Award', rank: 'C/2nd Lt', layout: 'officer', badge: 'assets/certificates/device-1circle.png' },
+  'Achievement 9': { title: 'Achievement 9', rank: null, layout: 'officer', badge: 'assets/certificates/device-1circle.png' },
+  'Achievement 10': { title: 'Achievement 10', rank: 'C/1st Lt', layout: 'officer', badge: 'assets/certificates/device-2circle.png', honoree: '1st Lt Willa Brown' },
+  'Achievement 11': { title: 'Achievement 11', rank: null, layout: 'officer', badge: 'assets/certificates/device-2circle.png' },
+  'Amelia Earhart': { title: 'Amelia Earhart', titleSuffix: 'Milestone Award', rank: 'C/Capt', layout: 'officer', badge: 'assets/certificates/device-3circle.png' },
+  'Achievement 12': { title: 'Achievement 12', rank: null, layout: 'officer', badge: 'assets/certificates/device-3circle.png' },
+  'Achievement 13': { title: 'Achievement 13', rank: null, layout: 'officer', badge: 'assets/certificates/device-3circle.png' },
+  'Achievement 14': { title: 'Achievement 14', rank: 'C/Maj', layout: 'officer', badge: 'assets/certificates/device-1diamond.png', honoree: 'Colonel George Boyd' },
+  'Achievement 15': { title: 'Achievement 15', rank: null, layout: 'officer', badge: 'assets/certificates/device-1diamond.png', honoree: 'Dr. Sally Ride' },
+  'Achievement 16': { title: 'Achievement 16', rank: null, layout: 'officer', badge: 'assets/certificates/device-1diamond.png' },
+  'Gen Ira C Eaker': { title: 'General Ira C. Eaker', titleSuffix: 'Milestone Award', rank: 'C/Lt Col', layout: 'officer', badge: 'assets/certificates/device-2diamond.png' },
+  'Gen Carl A Spaatz': { title: 'General Carl A. Spaatz', titleSuffix: 'Milestone Award', rank: 'C/Col', layout: 'officer', badge: 'assets/certificates/device-3diamond.png' }
+};
 const ATTENDANCE_LISTS = [
   {
     key: 'main',
@@ -89,8 +114,12 @@ let excludedMilestoneKeys = loadMilestoneExclusions();
 let excludedSdaKeys = loadSdaExclusions();
 let excludedDrillKeys = loadDrillExclusions();
 let excludedUniformKeys = loadUniformExclusions();
+let excludedCertificateKeys = loadCertificateExclusions();
 let attendanceLists = loadAttendanceLists();
 let loadedFileName = '';
+let globalScanBuffer = '';
+let globalScanBufferOverflowed = false;
+let globalScanLastTime = 0;
 let dashboardSorts = {
   overdue: DASHBOARD_SORT_DEFAULT,
   soon: DASHBOARD_SORT_DEFAULT,
@@ -121,6 +150,7 @@ cadetFileInput.addEventListener('change', handleCadetFileChange);
 document.getElementById('chooseFileButton').addEventListener('click', () => cadetFileInput.click());
 document.getElementById('uploadAnotherButton').addEventListener('click', () => cadetFileInput.click());
 document.addEventListener('click', handleActionClick);
+document.addEventListener('keydown', handleGlobalAttendanceScan, true);
 uploadDropZone.addEventListener('dragenter', handleUploadDrag);
 uploadDropZone.addEventListener('dragover', handleUploadDrag);
 uploadDropZone.addEventListener('dragleave', handleUploadDrag);
@@ -133,6 +163,7 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
   document.getElementById('allView').classList.toggle('hidden', btn.dataset.view !== 'all');
   document.getElementById('milestonesView').classList.toggle('hidden', btn.dataset.view !== 'milestones');
   document.getElementById('attendanceView').classList.toggle('hidden', btn.dataset.view !== 'attendance');
+  document.getElementById('printReportsView').classList.toggle('hidden', btn.dataset.view !== 'printReports');
   document.getElementById('requirementsView').classList.toggle('hidden', btn.dataset.view !== 'requirements');
 
   if (btn.dataset.view === 'attendance') {
@@ -151,6 +182,10 @@ document.getElementById('uniformStatusFilter').addEventListener('change', render
 document.getElementById('uniformAchievementFilter').addEventListener('change', renderUniformTests);
 document.getElementById('printMilestonesButton').addEventListener('click', handlePrintMilestonesReport);
 document.getElementById('attendanceEntryForm').addEventListener('submit', handleAttendanceEntrySubmit);
+document.getElementById('promotionCertificatePreset').addEventListener('change', handlePromotionCertificateFilterChange);
+document.getElementById('promotionCertificateMonths').addEventListener('input', renderPromotionCertificateReport);
+document.getElementById('promotionCertificateCustomPicker').addEventListener('change', renderPromotionCertificateReport);
+document.getElementById('printPromotionCertificatesButton').addEventListener('click', handlePrintPromotionCertificatesReport);
 window.addEventListener('afterprint', () => document.body.classList.remove('printing-report'));
 document.querySelectorAll('.dashboard-sort').forEach(select => {
   select.value = dashboardSorts[select.dataset.section] || DASHBOARD_SORT_DEFAULT;
@@ -283,6 +318,16 @@ function handleActionClick(event) {
     return;
   }
 
+  if (action === 'select-all-certificate-promotions') {
+    setAllPromotionCertificateCheckboxes(true);
+    return;
+  }
+
+  if (action === 'clear-certificate-promotions') {
+    setAllPromotionCertificateCheckboxes(false);
+    return;
+  }
+
   const key = clean(button.dataset.key);
   if (!key) return;
 
@@ -363,6 +408,22 @@ function handleActionClick(event) {
     persistUniformExclusions();
     renderAll();
     setStatusMessage('Cadet re-added to uniform tests.', 'success');
+    return;
+  }
+
+  if (action === 'exclude-certificate') {
+    excludedCertificateKeys.add(key);
+    persistCertificateExclusions();
+    renderAll();
+    setStatusMessage('Cadet excluded from promotion certificates.', 'info');
+    return;
+  }
+
+  if (action === 'include-certificate') {
+    excludedCertificateKeys.delete(key);
+    persistCertificateExclusions();
+    renderAll();
+    setStatusMessage('Cadet re-added to promotion certificates.', 'success');
   }
 }
 
@@ -423,9 +484,87 @@ function handleDueSortChange(event) {
 }
 
 function handlePrintMilestonesReport() {
+  clearPrintReports();
   renderPrintableMilestonesReport();
   document.body.classList.add('printing-report');
   window.print();
+}
+
+function handlePromotionCertificateFilterChange() {
+  const customPicker = document.getElementById('promotionCertificateCustomPicker');
+  customPicker.classList.toggle('hidden', document.getElementById('promotionCertificatePreset').value !== 'custom');
+  renderPromotionCertificateReport();
+}
+
+function handlePrintPromotionCertificatesReport() {
+  const rows = getPromotionCertificateRows();
+  if (!rows.length) {
+    setStatusMessage('No promotion certificates match the current report filters.', 'error');
+    return;
+  }
+
+  clearPrintReports();
+  renderPrintablePromotionCertificatesReport(rows);
+  document.body.classList.add('printing-report');
+  window.print();
+}
+
+function clearPrintReports() {
+  document.querySelectorAll('.print-report').forEach(report => {
+    report.innerHTML = '';
+  });
+}
+
+function handleGlobalAttendanceScan(event) {
+  if (event.ctrlKey || event.metaKey || event.altKey) {
+    resetGlobalScanBuffer();
+    return;
+  }
+
+  const isDigit = event.key.length === 1 && event.key >= '0' && event.key <= '9';
+  const isTerminator = event.key === 'Enter' || event.key === 'Tab';
+
+  if (!isDigit && !isTerminator) {
+    resetGlobalScanBuffer();
+    return;
+  }
+
+  const now = event.timeStamp;
+  if (globalScanBuffer && now - globalScanLastTime > SCANNER_MAX_KEY_GAP_MS) {
+    resetGlobalScanBuffer();
+  }
+
+  if (isDigit) {
+    globalScanLastTime = now;
+    if (!globalScanBufferOverflowed) {
+      globalScanBuffer += event.key;
+      if (globalScanBuffer.length > 6) {
+        globalScanBufferOverflowed = true;
+      }
+    }
+    return;
+  }
+
+  // Terminator key: only a run of exactly six digits typed at scanner speed counts as a scan.
+  const scannedNumber = globalScanBuffer;
+  const wasCompleteScan = !globalScanBufferOverflowed && scannedNumber.length === 6;
+  resetGlobalScanBuffer();
+  if (!wasCompleteScan) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const activeElement = document.activeElement;
+  addAttendanceNumber(scannedNumber);
+
+  if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+    activeElement.value = '';
+  }
+}
+
+function resetGlobalScanBuffer() {
+  globalScanBuffer = '';
+  globalScanBufferOverflowed = false;
 }
 
 function handleAttendanceEntrySubmit(event) {
@@ -708,6 +847,7 @@ function renderAll() {
   renderExcludedCadets();
   renderRequirements();
   renderAttendanceScanner();
+  renderPromotionCertificateReport();
 }
 
 function renderStats() {
@@ -1047,6 +1187,47 @@ function renderUniformExclusions(uniformRows) {
     action: 'include-uniform',
     buttonLabel: 'Re-add to Uniforms'
   });
+}
+
+function renderPrintablePromotionCertificatesReport(rows) {
+  const report = document.getElementById('printReportsPrintReport');
+  const printedOn = dateFormatter.format(new Date());
+
+  report.innerHTML = `<div class="print-report-header">
+      <h1>Promotion Certificates</h1>
+      <p>${rows.length} certificate${rows.length === 1 ? '' : 's'} | Printed ${esc(printedOn)}</p>
+    </div>
+    ${rows.map(renderCertificatePage).join('')}`;
+}
+
+function renderCertificatePage(row) {
+  const template = CERTIFICATE_TEMPLATES[row.promotionName] || {};
+  const isOfficer = template.layout === 'officer';
+  const title = template.title || row.promotionName || 'Unknown';
+  const requirementsText = template.rank
+    ? `Has satisfactorily completed all requirements and is entitled to promotion to ${template.rank}`
+    : 'Has satisfactorily completed all requirements';
+
+  const emblemsHtml = `
+    ${isOfficer && template.badge ? `<div class="cert-devices"><img src="${esc(template.badge)}" alt="" /></div>` : ''}
+    ${!isOfficer && template.badge ? `<div class="cert-insignia"><img src="${esc(template.badge)}" alt="" /></div>` : ''}
+    <div class="cert-seal"><img src="assets/certificates/seal.png" alt="" /></div>
+    <div class="cert-wings"><img src="assets/certificates/wings.png" alt="" /></div>`;
+
+  return `<section class="certificate-page">
+    <div class="certificate-panel ${isOfficer ? 'cert-officer' : 'cert-enlisted'}">
+      ${emblemsHtml}
+      <div class="cert-body">
+        <p class="cert-org">Civil Air Patrol</p>
+        <h1 class="cert-title${template.titleSuffix ? ' cert-title-milestone' : ''}">${esc(title)}${template.titleSuffix ? `<br>${esc(template.titleSuffix)}` : ''}</h1>
+        ${template.honoree ? `<p class="cert-honoree">${esc(template.honoree)}</p>` : ''}
+        <p class="cert-presented">This certificate is presented to</p>
+        <p class="cert-name">${esc(row.name || 'Unknown')}</p>
+        <p class="cert-requirements">${esc(requirementsText)}</p>
+        <p class="cert-date">${esc(row.awardDateText)}</p>
+      </div>
+    </div>
+  </section>`;
 }
 
 function renderPrintableMilestonesReport() {
@@ -1434,6 +1615,82 @@ function renderRequirements() {
     '</tbody>';
 }
 
+function renderPromotionCertificateReport() {
+  renderPromotionCertificatePicker();
+
+  const rows = getPromotionCertificateRows();
+  document.getElementById('printReportCount').textContent = formatCertificateCount(rows.length);
+  renderPromotionCertificatePreview(rows);
+  renderCertificateExclusions();
+}
+
+function renderCertificateExclusions() {
+  const excludedRows = getExcludedCertificateRows();
+  const countBadge = document.getElementById('certificateExcludedCount');
+  if (countBadge) countBadge.textContent = `${excludedRows.length} excluded`;
+
+  renderScopedExclusionList({
+    containerId: 'excludedCertificatesList',
+    rows: excludedRows.map(row => ({ key: row.key, name: row.name, capid: row.capid, achievement: row.promotionName })),
+    emptyMessage: 'No cadets are excluded from promotion certificates.',
+    noDataMessage: 'Upload a cadet report to manage certificate exclusions.',
+    action: 'include-certificate',
+    buttonLabel: 'Re-add to Certificates'
+  });
+}
+
+function renderPromotionCertificatePicker() {
+  const container = document.getElementById('promotionCertificateCustomPicker');
+  if (container.dataset.rendered === 'true') return;
+
+  container.innerHTML = `<div class="promotion-picker-heading">
+      <strong>Pick Promotions</strong>
+      <div>
+        <button class="action-chip include" type="button" data-action="select-all-certificate-promotions">Select All</button>
+        <button class="action-chip exclude" type="button" data-action="clear-certificate-promotions">Clear All</button>
+      </div>
+    </div>
+    <div class="promotion-picker-grid">
+      ${requirements.map(row => {
+        const promotionName = clean(row.Achievement);
+        return `<label>
+          <input type="checkbox" value="${esc(promotionName)}" data-certificate-promotion checked />
+          <span>${esc(promotionName)}${row.Rank ? ` - ${esc(row.Rank)}` : ''}</span>
+        </label>`;
+      }).join('')}
+    </div>`;
+  container.dataset.rendered = 'true';
+}
+
+function renderPromotionCertificatePreview(rows) {
+  const table = document.getElementById('promotionCertificatePreviewTable');
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to preview promotion certificates.</td></tr>';
+    return;
+  }
+
+  if (!rows.length) {
+    table.innerHTML = '<tr><td class="empty">No promotion certificates match the current filters.</td></tr>';
+    return;
+  }
+
+  table.innerHTML = `<thead><tr>
+      <th>New Grade</th>
+      <th>Name</th>
+      <th>Promotion Name</th>
+      <th>Date of Award</th>
+      <th></th>
+    </tr></thead><tbody>` +
+    rows.map(row => `<tr>
+      <td>${esc(row.newGrade || 'Unknown')}</td>
+      <td><strong>${esc(row.name || 'Unknown')}</strong>${row.capid ? `<br><span class="note">CAPID ${esc(row.capid)}</span>` : ''}</td>
+      <td>${esc(row.promotionName || 'Unknown')}</td>
+      <td>${esc(row.awardDateText)}</td>
+      <td><button class="action-chip exclude" type="button" data-action="exclude-certificate" data-key="${esc(row.key)}">Exclude</button></td>
+    </tr>`).join('') +
+    '</tbody>';
+}
+
 function renderAttendanceScanner() {
   ATTENDANCE_LISTS.forEach(item => {
     const numbers = [...attendanceLists[item.key]];
@@ -1576,6 +1833,96 @@ function getVisibleUniformRows() {
   return sortDueRows(rows, dueSorts.uniform);
 }
 
+function getPromotionCertificateRows() {
+  const selectedPromotions = getSelectedCertificatePromotions();
+  const cutoffDate = getPromotionCertificateCutoffDate();
+
+  return cadets
+    .map(buildPromotionCertificateRow)
+    .filter(Boolean)
+    .filter(row => selectedPromotions.has(row.promotionName))
+    .filter(row => !cutoffDate || (row.awardDate && startOfDay(row.awardDate) >= cutoffDate))
+    .filter(row => !excludedCertificateKeys.has(row.key))
+    .sort((left, right) =>
+      comparePromotionCertificateRows(left, right)
+    );
+}
+
+function buildPromotionCertificateRow(cadet) {
+  const currentIndex = requirements.findIndex(row =>
+    clean(row.Achievement).toLowerCase() === clean(cadet.achievement).toLowerCase()
+  );
+
+  if (currentIndex <= 0) return null;
+
+  const awardedPromotion = requirements[currentIndex - 1];
+  const nextApprovalDate = parseDate(cadet.raw.NextApprovalDate);
+  const awardDate = addDays(nextApprovalDate, -56);
+
+  return {
+    key: cadet.key,
+    capid: cadet.capid,
+    name: cadet.name,
+    newGrade: clean(awardedPromotion.Rank || awardedPromotion.Grade),
+    promotionName: clean(awardedPromotion.Achievement),
+    awardDate,
+    awardDateText: formatDate(awardDate)
+  };
+}
+
+function getAllPromotionCertificateRows() {
+  const selectedPromotions = getSelectedCertificatePromotions();
+  const cutoffDate = getPromotionCertificateCutoffDate();
+
+  return cadets
+    .map(buildPromotionCertificateRow)
+    .filter(Boolean)
+    .filter(row => selectedPromotions.has(row.promotionName))
+    .filter(row => !cutoffDate || (row.awardDate && startOfDay(row.awardDate) >= cutoffDate))
+    .sort((left, right) =>
+      comparePromotionCertificateRows(left, right)
+    );
+}
+
+function getExcludedCertificateRows() {
+  return getAllPromotionCertificateRows().filter(row => excludedCertificateKeys.has(row.key));
+}
+
+function getSelectedCertificatePromotions() {
+  const preset = document.getElementById('promotionCertificatePreset').value;
+
+  if (preset === 'milestonesCurry') {
+    return new Set(CERTIFICATE_MILESTONE_AND_CURRY_PROMOTIONS);
+  }
+
+  if (preset === 'custom') {
+    return new Set([...document.querySelectorAll('[data-certificate-promotion]:checked')]
+      .map(input => clean(input.value))
+      .filter(Boolean));
+  }
+
+  return new Set(requirements.map(row => clean(row.Achievement)).filter(Boolean));
+}
+
+function getPromotionCertificateCutoffDate() {
+  const months = Number.parseInt(document.getElementById('promotionCertificateMonths').value, 10);
+  if (!Number.isFinite(months) || months <= 0) return null;
+  return startOfDay(addMonths(today, -months));
+}
+
+function comparePromotionCertificateRows(left, right) {
+  return achievementOrder(left.promotionName) - achievementOrder(right.promotionName) ||
+    compareText(left.name, right.name) ||
+    normalizedDateValue(right.awardDate) - normalizedDateValue(left.awardDate);
+}
+
+function setAllPromotionCertificateCheckboxes(checked) {
+  document.querySelectorAll('[data-certificate-promotion]').forEach(input => {
+    input.checked = checked;
+  });
+  renderPromotionCertificateReport();
+}
+
 function matchesCadetSearch(cadet, query) {
   return [cadet.name, cadet.capid, cadet.email, cadet.achievement]
     .join(' ')
@@ -1627,6 +1974,10 @@ function loadUniformExclusions() {
   return loadStoredSet(UNIFORM_EXCLUDED_STORAGE_KEY, 'stored uniform exclusions');
 }
 
+function loadCertificateExclusions() {
+  return loadStoredSet(CERTIFICATE_EXCLUDED_STORAGE_KEY, 'stored certificate exclusions');
+}
+
 function loadAttendanceLists() {
   const fallback = Object.fromEntries(ATTENDANCE_LISTS.map(item => [item.key, new Set()]));
 
@@ -1671,6 +2022,10 @@ function persistDrillExclusions() {
 
 function persistUniformExclusions() {
   persistStoredSet(UNIFORM_EXCLUDED_STORAGE_KEY, excludedUniformKeys, 'uniform exclusions');
+}
+
+function persistCertificateExclusions() {
+  persistStoredSet(CERTIFICATE_EXCLUDED_STORAGE_KEY, excludedCertificateKeys, 'certificate exclusions');
 }
 
 function persistAttendanceLists() {
@@ -1736,6 +2091,10 @@ function formatNumberCount(count) {
   return `${count} number${count === 1 ? '' : 's'}`;
 }
 
+function formatCertificateCount(count) {
+  return `${count} certificate${count === 1 ? '' : 's'}`;
+}
+
 function formatLabelList(labels) {
   if (labels.length <= 1) return labels[0] || '';
   if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
@@ -1773,6 +2132,10 @@ function startOfDay(date) {
 
 function addDays(date, days) {
   return date ? new Date(date.getFullYear(), date.getMonth(), date.getDate() + days) : null;
+}
+
+function addMonths(date, months) {
+  return date ? new Date(date.getFullYear(), date.getMonth() + months, date.getDate()) : null;
 }
 
 function passScore(date, score) {

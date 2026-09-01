@@ -11,7 +11,7 @@
   <header>
     <div class="header-title-row">
       <h1>CAP Cadet Promotion Dashboard</h1>
-      <span class="version-badge">Version 0.5</span>
+      <span class="version-badge">Version 0.6</span>
     </div>
     <p>Start by loading a cadet full-track report. The dashboard opens after a CSV or Excel workbook is parsed, then identifies overdue promotions, upcoming promotion dates, completed requirements, and missing items.</p>
   </header>
@@ -420,6 +420,17 @@
         </div>
 
         <div class="table-wrap"><table id="promotionCertificatePreviewTable"></table></div>
+      </div>
+
+      <div class="card">
+        <div class="card-heading">
+          <div>
+            <h2>Certificate Exclusions</h2>
+            <p class="note">Excluded cadets are skipped when building or printing promotion certificates until you re-add them.</p>
+          </div>
+          <span id="certificateExcludedCount" class="badge future">0 excluded</span>
+        </div>
+        <div id="excludedCertificatesList" class="excluded-list"></div>
       </div>
     </section>
 

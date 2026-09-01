@@ -215,6 +215,7 @@ main {
 input[type="file"],
 input[type="search"],
 input[type="text"],
+input[type="number"],
 select,
 textarea,
 .action-chip,
@@ -233,6 +234,7 @@ textarea,
 input[type="file"]:focus,
 input[type="search"]:focus,
 input[type="text"]:focus,
+input[type="number"]:focus,
 select:focus,
 textarea:focus,
 .tab:focus,
@@ -453,6 +455,10 @@ input[type="file"].visually-hidden {
   margin-top: 18px;
 }
 
+#printReportsView > .card + .card {
+  margin-top: 18px;
+}
+
 .paired-section {
   --paired-card-height: 680px;
   display: grid;
@@ -628,6 +634,87 @@ h3 {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 0.9rem;
   font-weight: 800;
+}
+
+.print-report-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(240px, 1fr) minmax(180px, 0.7fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.print-report-controls label {
+  display: grid;
+  gap: 8px;
+  color: var(--cap-blue-900);
+  font-weight: 800;
+}
+
+.inline-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.inline-input span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.promotion-picker {
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card-alt);
+}
+
+.promotion-picker-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.promotion-picker-heading > div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.promotion-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.promotion-picker-grid label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.promotion-picker-grid input {
+  width: auto;
+  margin-top: 3px;
+  accent-color: var(--cap-blue-700);
+}
+
+.print-report-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
 }
 
 .table-wrap {
@@ -864,7 +951,8 @@ tr:hover td {
   .controls,
   .paired-section,
   .attendance-layout,
-  .attendance-lists-grid {
+  .attendance-lists-grid,
+  .print-report-controls {
     grid-template-columns: 1fr;
   }
 }
@@ -939,7 +1027,7 @@ tr:hover td {
     display: none !important;
   }
 
-  body.printing-report .print-report {
+  body.printing-report .print-report:not(:empty) {
     display: block;
     padding: 0;
   }
@@ -1027,4 +1115,170 @@ tr:hover td {
     color: #555;
     font-style: italic;
   }
+
+  #printReportsPrintReport > .print-report-header {
+    page: certificate;
+  }
+
+  .certificate-page {
+    break-before: page;
+    page-break-before: always;
+    page: certificate;
+    display: grid;
+    place-items: center;
+  }
+
+  .print-report-header + .certificate-page {
+    break-before: auto;
+    page-break-before: auto;
+  }
+
+  .certificate-panel {
+    position: relative;
+    display: grid;
+    align-items: center;
+    gap: 0.15in;
+    width: 100%;
+    max-width: 9.5in;
+    aspect-ratio: 3 / 2;
+    margin: 0 auto;
+    padding: 0.45in 0.55in;
+    border: 10px double var(--cap-blue-900, #0f2747);
+    color: #111;
+    background: #fff;
+  }
+
+  .cert-enlisted {
+    grid-template-columns: 1.9in 1fr 1.7in;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas:
+      "insignia body seal"
+      "insignia body wings";
+  }
+
+  .cert-officer {
+    grid-template-columns: 1.8in 1fr 1.8in;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "devices devices devices"
+      "seal body wings";
+  }
+
+  .cert-insignia,
+  .cert-devices,
+  .cert-seal,
+  .cert-wings {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cert-insignia { grid-area: insignia; }
+  .cert-devices { grid-area: devices; margin-bottom: 0.1in; }
+  .cert-seal { grid-area: seal; }
+  .cert-wings { grid-area: wings; }
+  .cert-body { grid-area: body; text-align: center; }
+
+  .cert-insignia img {
+    width: 1.65in;
+    height: auto;
+  }
+
+  .cert-devices img {
+    max-height: 0.5in;
+    width: auto;
+  }
+
+  .cert-officer .cert-devices img {
+    max-height: 1.05in;
+  }
+
+  .cert-seal img {
+    width: 1.5in;
+    height: auto;
+  }
+
+  .cert-officer .cert-seal img {
+    width: 1.6in;
+  }
+
+  .cert-wings img {
+    width: 1.2in;
+    height: auto;
+  }
+
+  .cert-officer .cert-wings img {
+    width: 1.3in;
+  }
+
+  .cert-org {
+    margin: 0 0 2px;
+    color: var(--cap-blue-900, #0f2747);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 13pt;
+  }
+
+  .cert-title {
+    margin: 0 0 0.22in;
+    color: var(--cap-blue-900, #0f2747);
+    text-transform: uppercase;
+    font-size: 21pt;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  .cert-title-milestone {
+    font-size: 15pt;
+  }
+
+  .cert-honoree {
+    margin: -0.14in 0 0.14in;
+    color: var(--cap-blue-900, #0f2747);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 12pt;
+    white-space: nowrap;
+  }
+
+  .cert-presented {
+    margin: 0 0 0.08in;
+    color: #555;
+    font-weight: 700;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cert-name {
+    margin: 0 auto 0.16in;
+    padding: 0 0.1in 0.08in;
+    border-bottom: 1px solid var(--cap-blue-900, #0f2747);
+    display: inline-block;
+    min-width: 3.4in;
+    color: var(--cap-blue-900, #0f2747);
+    font-size: 19pt;
+    font-weight: 800;
+  }
+
+  .cert-requirements {
+    margin: 0 auto 0.18in;
+    color: #222;
+    font-size: 11pt;
+    font-weight: 700;
+    max-width: 4.6in;
+  }
+
+  .cert-date {
+    margin: 0;
+    color: var(--cap-blue-900, #0f2747);
+    font-size: 13pt;
+    font-weight: 800;
+  }
+}
+
+@page certificate {
+  size: landscape;
+  margin: 0.4in;
 }
