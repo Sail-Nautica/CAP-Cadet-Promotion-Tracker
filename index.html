@@ -32,8 +32,24 @@
           <button id="chooseFileButton" class="primary-button" type="button">Choose File</button>
         </div>
         <div data-status-message class="status-banner info" role="status">Upload a cadet full-track report to continue.</div>
+
+        <div class="upload-panel-footer">
+          <p class="note">See what changed in each release before you load a report.</p>
+          <button id="viewChangelogButton" class="secondary-button" type="button">Version Changelog</button>
+        </div>
       </div>
     </section>
+  </main>
+
+  <main id="changelogPage" class="changelog-page hidden">
+    <div class="changelog-topbar">
+      <div>
+        <span class="eyebrow">Release History</span>
+        <strong>Version Changelog</strong>
+      </div>
+      <button id="backToUploadButton" class="secondary-button" type="button">Back to Load Cadet Data</button>
+    </div>
+    <div id="changelogEntries" class="changelog-entries"></div>
   </main>
 
   <main id="dashboardPage" class="dashboard-page hidden">

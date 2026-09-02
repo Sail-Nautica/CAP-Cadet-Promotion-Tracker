@@ -155,6 +155,87 @@ main {
   padding: 20px;
 }
 
+.upload-panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(174, 190, 210, 0.7);
+}
+
+.upload-panel-footer .note {
+  margin: 0;
+}
+
+.changelog-page {
+  max-width: 980px;
+}
+
+.changelog-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding: 16px 18px;
+  border: 1px solid rgba(174, 190, 210, 0.84);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow);
+}
+
+.changelog-topbar strong {
+  font-size: 1.15rem;
+  color: var(--cap-blue-900);
+}
+
+.changelog-entries {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.changelog-entry {
+  border-left: 5px solid var(--cap-blue-700);
+}
+
+.changelog-entry-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.changelog-entry-heading h2 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+  color: var(--cap-blue-900);
+}
+
+.changelog-entry-heading .note {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.changelog-list {
+  margin: 14px 0 0;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.changelog-list li {
+  margin-bottom: 6px;
+}
+
+.changelog-list li:last-child {
+  margin-bottom: 0;
+}
+
 .eyebrow {
   display: block;
   margin-bottom: 8px;
@@ -973,7 +1054,9 @@ tr:hover td {
   .card-heading,
   .dashboard-topbar,
   .file-drop-zone,
-  .excluded-item {
+  .excluded-item,
+  .upload-panel-footer,
+  .changelog-topbar {
     flex-direction: column;
     align-items: stretch;
   }
@@ -994,6 +1077,7 @@ tr:hover td {
 @media print {
   header,
   .upload-page,
+  .changelog-page,
   .upload-grid,
   .dashboard-topbar,
   .status-banner,
