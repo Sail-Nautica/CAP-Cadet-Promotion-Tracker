@@ -15,7 +15,7 @@ const CHANGELOG = [
     date: 'September 1, 2026',
     title: 'Spaatz Criteria & Certificate Printing',
     changes: [
-      'Spaatz completion is now based on Physical Fitness, the Leadership test or module, the Aerospace test or module, and Uniform. Active Participation, Cadet Oath, and Leadership Expectations are no longer required for Spaatz, and the change applies everywhere those requirements are counted.',
+      'Spaatz completion is now based only on Physical Fitness, the Leadership test or module, and the Aerospace test or module. Active Participation, Cadet Oath, Uniform, and Leadership Expectations are no longer required for Spaatz, and the change applies everywhere those requirements are counted.',
       'A cadet who finishes every Spaatz requirement is now marked Completed instead of Ready, since there is no promotion after Spaatz. Completed cadets drop out of the overdue, due soon, and ready lists, get their own dashboard count, and can be filtered on the All Promotions page.',
       'Removed the cover page from printed promotion certificates so every sheet is a certificate.',
       'Removed the page title, address, page number, and date printed along the edges of certificate pages.',
@@ -190,7 +190,7 @@ Achievement 14,C/Maj,Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass
 Achievement 15,C/Maj',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
 Achievement 16,C/Maj'',Pass,Pass,None,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Pass,Pass,Pass
 Gen Ira C Eaker,C/Lt Col,Pass,None,None,None,None,Pass,Pass,Pass,Pass,"Officer Leadership Course, Speech, & Essay",None,None,None,None
-Gen Carl A Spaatz,C/Col,Pass,Pass,None,Pass,None,None,None,Pass,None,None,None,None,None,None`;
+Gen Carl A Spaatz,C/Col,Pass,Pass,None,Pass,None,None,None,None,None,None,None,None,None,None`;
 
 let cadets = [];
 let requirements = parseCSV(BUILT_IN_REQUIREMENTS_CSV);
