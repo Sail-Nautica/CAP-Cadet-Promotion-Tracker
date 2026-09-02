@@ -9,6 +9,79 @@ const ATTENDANCE_STORAGE_KEY = 'cap-dashboard-attendance-scanner-v1';
 const SCANNER_MAX_KEY_GAP_MS = 60;
 const DASHBOARD_SORT_DEFAULT = 'dueDate';
 const DUE_SORT_DEFAULT = 'dueAsc';
+const CHANGELOG = [
+  {
+    version: '0.6',
+    date: 'August 31, 2026',
+    title: 'Promotion Certificates',
+    changes: [
+      'Added promotion certificate generation with official CAP insignia, grade devices, and seal artwork.',
+      'Added a certificate picker with promotion presets, a custom promotion selector, and a lookahead window in months.',
+      'Added a printable certificate report that lays out one certificate per page with enlisted and officer layouts.',
+      'Added a Certificate Exclusions list so individual cadets can be skipped when building or printing certificates.'
+    ]
+  },
+  {
+    version: '0.5',
+    date: 'June 24, 2026',
+    title: 'Attendance Scanner',
+    changes: [
+      'Added an Attendance Scanner tab that accepts barcode scanner input anywhere in the dashboard.',
+      'Added separate attendance lists for general attendance, missing forms, and missing uniforms.',
+      'Added exporting and clearing for each attendance list.',
+      'Added a Print Reports tab to hold the printable report builders.',
+      'Attendance lists now persist between sessions.'
+    ]
+  },
+  {
+    version: '0.4.1',
+    date: 'June 9, 2026',
+    title: 'Print Fixes',
+    changes: [
+      'Fixed printed report layouts that broke across page boundaries.',
+      'Removed the leftover duplicate dashboard file and unused print helpers.'
+    ]
+  },
+  {
+    version: '0.4',
+    date: 'May 28, 2026',
+    title: 'Printable Milestone Reports',
+    changes: [
+      'Added a printable milestones, SDA, drill, and uniform report.',
+      'Added requirement status detail so missing items are named in printed output.',
+      'Highlighted outstanding milestone and SDA requirements in printed reports.'
+    ]
+  },
+  {
+    version: '0.3',
+    date: 'May 23, 2026',
+    title: 'Consolidated Dashboard',
+    changes: [
+      'Consolidated the dashboard into a single page with tabbed views.',
+      'Added the version badge to the page header.',
+      'Cleaned up styling across the cards, tables, and status banners.'
+    ]
+  },
+  {
+    version: '0.2',
+    date: 'May 22, 2026',
+    title: 'Upload Page & Focus Sheets',
+    changes: [
+      'Added the Load Cadet Data upload page as the entry point to the dashboard.',
+      'Added individual cadet focus sheets and the ability to print them.'
+    ]
+  },
+  {
+    version: '0.1',
+    date: 'May 22, 2026',
+    title: 'Initial Release',
+    changes: [
+      'Initial dashboard reading CAP cadet full-track CSV and Excel reports.',
+      'Added overdue, upcoming, and ready promotion tracking with a requirements matrix.'
+    ]
+  }
+];
+const APP_VERSION = CHANGELOG[0].version;
 const MILESTONE_ACHIEVEMENTS = [
   { achievement: 'Wright Brothers', label: 'Wright Brothers' },
   { achievement: 'Billy Mitchell', label: 'Mitchell' },
@@ -142,6 +215,7 @@ const today = startOfDay(new Date());
 const cadetFileInput = document.getElementById('cadetFile');
 const uploadPage = document.getElementById('uploadPage');
 const dashboardPage = document.getElementById('dashboardPage');
+const changelogPage = document.getElementById('changelogPage');
 const uploadDropZone = document.getElementById('uploadDropZone');
 const uploadFileName = document.getElementById('uploadFileName');
 const loadedReportName = document.getElementById('loadedReportName');
@@ -149,6 +223,8 @@ const loadedReportName = document.getElementById('loadedReportName');
 cadetFileInput.addEventListener('change', handleCadetFileChange);
 document.getElementById('chooseFileButton').addEventListener('click', () => cadetFileInput.click());
 document.getElementById('uploadAnotherButton').addEventListener('click', () => cadetFileInput.click());
+document.getElementById('viewChangelogButton').addEventListener('click', showChangelogPage);
+document.getElementById('backToUploadButton').addEventListener('click', showUploadPage);
 document.addEventListener('click', handleActionClick);
 document.addEventListener('keydown', handleGlobalAttendanceScan, true);
 uploadDropZone.addEventListener('dragenter', handleUploadDrag);
@@ -2045,16 +2121,48 @@ function persistStoredSet(storageKey, values, description) {
   }
 }
 
+function renderChangelog() {
+  document.getElementById('changelogEntries').innerHTML = CHANGELOG.map((entry, index) => `
+    <article class="card changelog-entry">
+      <div class="changelog-entry-heading">
+        <div>
+          <h2>Version ${esc(entry.version)}${entry.title ? ` &mdash; ${esc(entry.title)}` : ''}</h2>
+          <p class="note">${esc(entry.date)}</p>
+        </div>
+        <span class="badge ${index === 0 ? 'ready' : 'future'}">${index === 0 ? 'Current' : 'Previous'}</span>
+      </div>
+      <ul class="changelog-list">
+        ${entry.changes.map(change => `<li>${esc(change)}</li>`).join('')}
+      </ul>
+    </article>
+  `).join('');
+}
+
+function applyAppVersion() {
+  document.querySelectorAll('.version-badge').forEach(badge => {
+    badge.textContent = `Version ${APP_VERSION}`;
+  });
+}
+
 function showDashboard() {
   uploadPage.classList.add('hidden');
+  changelogPage.classList.add('hidden');
   dashboardPage.classList.remove('hidden');
   loadedReportName.textContent = loadedFileName || 'Cadet report loaded';
 }
 
 function showUploadPage() {
   dashboardPage.classList.add('hidden');
+  changelogPage.classList.add('hidden');
   uploadPage.classList.remove('hidden');
   loadedReportName.textContent = 'No report loaded';
+}
+
+// The changelog is reachable only from the upload page, so it never hides the dashboard.
+function showChangelogPage() {
+  uploadPage.classList.add('hidden');
+  changelogPage.classList.remove('hidden');
+  window.scrollTo(0, 0);
 }
 
 function setSelectedFileName(name) {
@@ -2166,4 +2274,6 @@ function esc(value) {
   ));
 }
 
+applyAppVersion();
+renderChangelog();
 renderAll();
