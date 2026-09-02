@@ -874,6 +874,11 @@ tr:hover td {
   color: var(--cap-green);
 }
 
+.complete {
+  background: var(--cap-green);
+  color: #fff;
+}
+
 .notready,
 .future {
   background: #edf2f8;

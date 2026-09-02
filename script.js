@@ -16,6 +16,7 @@ const CHANGELOG = [
     title: 'Spaatz Criteria & Certificate Printing',
     changes: [
       'Spaatz completion is now based on Physical Fitness, the Leadership test or module, the Aerospace test or module, and Uniform. Active Participation, Cadet Oath, and Leadership Expectations are no longer required for Spaatz, and the change applies everywhere those requirements are counted.',
+      'A cadet who finishes every Spaatz requirement is now marked Completed instead of Ready, since there is no promotion after Spaatz. Completed cadets drop out of the overdue, due soon, and ready lists, get their own dashboard count, and can be filtered on the All Promotions page.',
       'Removed the cover page from printed promotion certificates so every sheet is a certificate.',
       'Removed the page title, address, page number, and date printed along the edges of certificate pages.',
       'Centered each certificate on its page.'
@@ -820,9 +821,11 @@ function analyzeCadet(raw) {
   const missing = checks.filter(check => !check.done).map(check => check.name);
   const daysUntil = dueDate ? Math.ceil((startOfDay(dueDate) - today) / 86400000) : null;
   const ready = missing.length === 0;
+  const awardComplete = ready && isTerminalAchievement(achievement);
 
   let status = 'Future';
-  if (ready) status = 'Ready';
+  if (awardComplete) status = 'Completed';
+  else if (ready) status = 'Ready';
   else if (daysUntil !== null && daysUntil < 0) status = 'Overdue';
   else if (daysUntil !== null && daysUntil <= SOON_DAYS) status = 'Due Soon';
   else status = 'Not Ready';
@@ -841,6 +844,7 @@ function analyzeCadet(raw) {
     daysUntil,
     status,
     ready,
+    awardComplete,
     checks,
     completed,
     total,
@@ -947,6 +951,7 @@ function renderStats() {
     ['Overdue', dashboardCadets.filter(cadet => cadet.status === 'Overdue').length],
     ['Due Soon', dashboardCadets.filter(cadet => cadet.status === 'Due Soon').length],
     ['Ready Now', dashboardCadets.filter(cadet => cadet.status === 'Ready').length],
+    ['Completed', dashboardCadets.filter(cadet => cadet.status === 'Completed').length],
     ['Avg. Complete', dashboardCadets.length ? `${Math.round(dashboardCadets.reduce((sum, cadet) => sum + cadet.progress, 0) / dashboardCadets.length)}%` : '0%']
   ];
 
@@ -1829,6 +1834,16 @@ function milestoneLabel(achievement) {
   return milestone ? milestone.label : '';
 }
 
+// The last row of the requirements matrix is the top of the ladder, so a cadet who
+// finishes every requirement there has completed the award rather than earned a
+// promotion into something further on.
+function isTerminalAchievement(achievement) {
+  if (!requirements.length) return false;
+
+  const finalAchievement = clean(requirements[requirements.length - 1].Achievement).toLowerCase();
+  return finalAchievement !== '' && clean(achievement).toLowerCase() === finalAchievement;
+}
+
 function requiresSda(cadet) {
   const requirementRow = findRequirementForAchievement(cadet.achievement);
   return SDA_REQUIREMENTS.some(item => hasValue(requirementRow[item.requirementField]));
@@ -2194,6 +2209,7 @@ function statusClass(status) {
   if (status === 'Overdue') return 'overdue';
   if (status === 'Due Soon') return 'soon';
   if (status === 'Ready') return 'ready';
+  if (status === 'Completed') return 'complete';
   if (status === 'Future') return 'future';
   return 'notready';
 }
