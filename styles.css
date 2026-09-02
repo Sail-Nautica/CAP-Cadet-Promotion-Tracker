@@ -1218,6 +1218,16 @@ tr:hover td {
     overflow: hidden;
   }
 
+  /* One deliberately empty sheet leads the run; the first certificate breaks past it. */
+  .certificate-blank-page {
+    page: certificate;
+    display: block;
+    box-sizing: border-box;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+
   /* No cover header precedes the first certificate, so it must not force a blank leading sheet. */
   .certificate-page:first-child {
     break-before: auto;

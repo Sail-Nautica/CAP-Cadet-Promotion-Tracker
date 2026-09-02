@@ -18,7 +18,7 @@ const CHANGELOG = [
       'Spaatz completion is now based only on Physical Fitness, the Leadership test or module, and the Aerospace test or module. Active Participation, Cadet Oath, Uniform, and Leadership Expectations are no longer required for Spaatz, and the change applies everywhere those requirements are counted.',
       'A cadet who finishes every Spaatz requirement is now marked Completed instead of Ready, since there is no promotion after Spaatz. Completed cadets drop out of the overdue, due soon, and ready lists, get their own dashboard count, and can be filtered on the All Promotions page.',
       'A cadet with a completed Spaatz now gets a Spaatz promotion certificate instead of an Eaker one, printed without an award date. Dateless certificates are always included no matter how far back the lookahead window reaches.',
-      'Removed the cover page from printed promotion certificates so every sheet is a certificate.',
+      'Printed promotion certificates now lead with one blank sheet, followed by one certificate per sheet with no cover page.',
       'Removed the page title, address, page number, and date printed along the edges of certificate pages.',
       'Centered each certificate on its page, and centered the artwork and wording vertically inside the certificate border.'
     ]
@@ -1282,11 +1282,13 @@ function renderUniformExclusions(uniformRows) {
   });
 }
 
-// Certificates print with no cover header so every sheet is a certificate on its own.
+// Certificates print with no cover header so every sheet is a certificate on its own,
+// behind one blank leading sheet.
 function renderPrintablePromotionCertificatesReport(rows) {
   const report = document.getElementById('printReportsPrintReport');
 
-  report.innerHTML = rows.map(renderCertificatePage).join('');
+  report.innerHTML = '<section class="certificate-blank-page" aria-hidden="true"></section>' +
+    rows.map(renderCertificatePage).join('');
 }
 
 function renderCertificatePage(row) {
