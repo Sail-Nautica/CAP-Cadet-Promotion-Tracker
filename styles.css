@@ -1228,6 +1228,7 @@ tr:hover td {
     position: relative;
     display: grid;
     align-items: center;
+    align-content: center;
     gap: 0.15in;
     width: 100%;
     max-width: 9.5in;
@@ -1249,7 +1250,7 @@ tr:hover td {
 
   .cert-officer {
     grid-template-columns: 1.8in 1fr 1.8in;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto;
     grid-template-areas:
       "devices devices devices"
       "seal body wings";

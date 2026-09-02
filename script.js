@@ -20,7 +20,7 @@ const CHANGELOG = [
       'A cadet with a completed Spaatz now gets a Spaatz promotion certificate instead of an Eaker one, printed without an award date. Dateless certificates are always included no matter how far back the lookahead window reaches.',
       'Removed the cover page from printed promotion certificates so every sheet is a certificate.',
       'Removed the page title, address, page number, and date printed along the edges of certificate pages.',
-      'Centered each certificate on its page.'
+      'Centered each certificate on its page, and centered the artwork and wording vertically inside the certificate border.'
     ]
   },
   {
