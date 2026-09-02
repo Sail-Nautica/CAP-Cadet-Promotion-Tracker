@@ -1265,15 +1265,11 @@ function renderUniformExclusions(uniformRows) {
   });
 }
 
+// Certificates print with no cover header so every sheet is a certificate on its own.
 function renderPrintablePromotionCertificatesReport(rows) {
   const report = document.getElementById('printReportsPrintReport');
-  const printedOn = dateFormatter.format(new Date());
 
-  report.innerHTML = `<div class="print-report-header">
-      <h1>Promotion Certificates</h1>
-      <p>${rows.length} certificate${rows.length === 1 ? '' : 's'} | Printed ${esc(printedOn)}</p>
-    </div>
-    ${rows.map(renderCertificatePage).join('')}`;
+  report.innerHTML = rows.map(renderCertificatePage).join('');
 }
 
 function renderCertificatePage(row) {
