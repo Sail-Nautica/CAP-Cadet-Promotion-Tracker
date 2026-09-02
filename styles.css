@@ -1200,19 +1200,21 @@ tr:hover td {
     font-style: italic;
   }
 
-  #printReportsPrintReport > .print-report-header {
-    page: certificate;
-  }
-
   .certificate-page {
     break-before: page;
     page-break-before: always;
     page: certificate;
     display: grid;
     place-items: center;
+    box-sizing: border-box;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
   }
 
-  .print-report-header + .certificate-page {
+  /* No cover header precedes the first certificate, so it must not force a blank leading sheet. */
+  .certificate-page:first-child {
     break-before: auto;
     page-break-before: auto;
   }
@@ -1364,5 +1366,5 @@ tr:hover td {
 
 @page certificate {
   size: landscape;
-  margin: 0.4in;
+  margin: 0;
 }
