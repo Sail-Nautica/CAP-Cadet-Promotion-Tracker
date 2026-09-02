@@ -17,6 +17,7 @@ const CHANGELOG = [
     changes: [
       'Spaatz completion is now based only on Physical Fitness, the Leadership test or module, and the Aerospace test or module. Active Participation, Cadet Oath, Uniform, and Leadership Expectations are no longer required for Spaatz, and the change applies everywhere those requirements are counted.',
       'A cadet who finishes every Spaatz requirement is now marked Completed instead of Ready, since there is no promotion after Spaatz. Completed cadets drop out of the overdue, due soon, and ready lists, get their own dashboard count, and can be filtered on the All Promotions page.',
+      'A cadet with a completed Spaatz now gets a Spaatz promotion certificate instead of an Eaker one, printed without an award date. Dateless certificates are always included no matter how far back the lookahead window reaches.',
       'Removed the cover page from printed promotion certificates so every sheet is a certificate.',
       'Removed the page title, address, page number, and date printed along the edges of certificate pages.',
       'Centered each certificate on its page.'
@@ -1312,7 +1313,7 @@ function renderCertificatePage(row) {
         <p class="cert-presented">This certificate is presented to</p>
         <p class="cert-name">${esc(row.name || 'Unknown')}</p>
         <p class="cert-requirements">${esc(requirementsText)}</p>
-        <p class="cert-date">${esc(row.awardDateText)}</p>
+        ${row.awardDateText ? `<p class="cert-date">${esc(row.awardDateText)}</p>` : ''}
       </div>
     </div>
   </section>`;
@@ -1773,7 +1774,7 @@ function renderPromotionCertificatePreview(rows) {
       <td>${esc(row.newGrade || 'Unknown')}</td>
       <td><strong>${esc(row.name || 'Unknown')}</strong>${row.capid ? `<br><span class="note">CAPID ${esc(row.capid)}</span>` : ''}</td>
       <td>${esc(row.promotionName || 'Unknown')}</td>
-      <td>${esc(row.awardDateText)}</td>
+      <td>${row.awardDateText ? esc(row.awardDateText) : '<span class="note">No date</span>'}</td>
       <td><button class="action-chip exclude" type="button" data-action="exclude-certificate" data-key="${esc(row.key)}">Exclude</button></td>
     </tr>`).join('') +
     '</tbody>';
@@ -1939,7 +1940,7 @@ function getPromotionCertificateRows() {
     .map(buildPromotionCertificateRow)
     .filter(Boolean)
     .filter(row => selectedPromotions.has(row.promotionName))
-    .filter(row => !cutoffDate || (row.awardDate && startOfDay(row.awardDate) >= cutoffDate))
+    .filter(row => !cutoffDate || row.datelessAward || (row.awardDate && startOfDay(row.awardDate) >= cutoffDate))
     .filter(row => !excludedCertificateKeys.has(row.key))
     .sort((left, right) =>
       comparePromotionCertificateRows(left, right)
@@ -1951,7 +1952,27 @@ function buildPromotionCertificateRow(cadet) {
     clean(row.Achievement).toLowerCase() === clean(cadet.achievement).toLowerCase()
   );
 
-  if (currentIndex <= 0) return null;
+  if (currentIndex < 0) return null;
+
+  // Everyone else is certified for the promotion they just left, but a finished top of
+  // the ladder is certified for itself. There is no promotion approval behind it, so it
+  // carries no award date.
+  if (cadet.awardComplete) {
+    const earnedAward = requirements[currentIndex];
+
+    return {
+      key: cadet.key,
+      capid: cadet.capid,
+      name: cadet.name,
+      newGrade: clean(earnedAward.Rank || earnedAward.Grade),
+      promotionName: clean(earnedAward.Achievement),
+      awardDate: null,
+      awardDateText: '',
+      datelessAward: true
+    };
+  }
+
+  if (currentIndex === 0) return null;
 
   const awardedPromotion = requirements[currentIndex - 1];
   const nextApprovalDate = parseDate(cadet.raw.NextApprovalDate);
@@ -1964,7 +1985,8 @@ function buildPromotionCertificateRow(cadet) {
     newGrade: clean(awardedPromotion.Rank || awardedPromotion.Grade),
     promotionName: clean(awardedPromotion.Achievement),
     awardDate,
-    awardDateText: formatDate(awardDate)
+    awardDateText: formatDate(awardDate),
+    datelessAward: false
   };
 }
 
@@ -1976,7 +1998,7 @@ function getAllPromotionCertificateRows() {
     .map(buildPromotionCertificateRow)
     .filter(Boolean)
     .filter(row => selectedPromotions.has(row.promotionName))
-    .filter(row => !cutoffDate || (row.awardDate && startOfDay(row.awardDate) >= cutoffDate))
+    .filter(row => !cutoffDate || row.datelessAward || (row.awardDate && startOfDay(row.awardDate) >= cutoffDate))
     .sort((left, right) =>
       comparePromotionCertificateRows(left, right)
     );
