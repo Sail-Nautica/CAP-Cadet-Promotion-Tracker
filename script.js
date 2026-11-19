@@ -19,7 +19,9 @@ const CHANGELOG = [
       'Added the achievement ribbon to enlisted certificates and to the Mitchell, Earhart, Eaker, and Spaatz certificates.',
       'Cadet officer certificates now carry the squadron seal on the left, with grade devices centered across the top.',
       'Certificates use the template wording and Merriweather lettering, and drop the honoree names and double border.',
-      'Long cadet names shrink to stay on one line, and printing waits for the certificate artwork and font to finish loading.'
+      'Long cadet names shrink to stay on one line, and printing waits for the certificate artwork and font to finish loading.',
+      'Certificate titles now use consistent title case, and the Eaker certificate reads "Gen Ira C. Eaker Award" to match the other milestones.',
+      'A completed Spaatz certificate is now dated by the day the cadet met the last Spaatz requirement, and follows the lookahead window like every other certificate. It prints undated only if the report is missing one of those dates.'
     ]
   },
   {
@@ -174,9 +176,9 @@ const CERTIFICATE_SHARED_IMAGES = [
   { src: `${CERTIFICATE_ART}wings.png`, x: 7.513, y: 2.776, w: 2.344 }
 ];
 const CERTIFICATE_TEMPLATES = {
-  'Achievement 1': enlistedCertificate('ACHIEVEMENT 1', 'C/Amn', { ribbon: 'achievement-1', ribbonY: 1.679, insignia: 'amn', insigniaY: 2.62 }),
-  'Achievement 2': enlistedCertificate('ACHIEVEMENT 2', 'C/A1C', { ribbon: 'achievement-2', ribbonY: 1.715, insignia: 'a1c', insigniaY: 2.584 }),
-  'Achievement 3': enlistedCertificate('ACHIEVEMENT 3', 'C/SrA', { ribbon: 'achievement-3', ribbonY: 1.637, insignia: 'sra', insigniaY: 2.662 }),
+  'Achievement 1': enlistedCertificate('Achievement 1', 'C/Amn', { ribbon: 'achievement-1', ribbonY: 1.679, insignia: 'amn', insigniaY: 2.62 }),
+  'Achievement 2': enlistedCertificate('Achievement 2', 'C/A1C', { ribbon: 'achievement-2', ribbonY: 1.715, insignia: 'a1c', insigniaY: 2.584 }),
+  'Achievement 3': enlistedCertificate('Achievement 3', 'C/SrA', { ribbon: 'achievement-3', ribbonY: 1.637, insignia: 'sra', insigniaY: 2.662 }),
   'Wright Brothers': enlistedCertificate('Wright Brothers Award', 'C/SSgt', { ribbon: 'wright-brothers', ribbonY: 1.602, insignia: 'ssgt', insigniaY: 2.543 }),
   'Achievement 4': enlistedCertificate('Achievement 4', 'C/TSgt', { ribbon: 'achievement-4', ribbonY: 1.488, insignia: 'tsgt', insigniaY: 2.429 }),
   'Achievement 5': enlistedCertificate('Achievement 5', 'C/MSgt', { ribbon: 'achievement-5', ribbonY: 1.011, insignia: 'msgt', insigniaY: 2.036, x: 0.449 }),
@@ -193,7 +195,7 @@ const CERTIFICATE_TEMPLATES = {
   'Achievement 14': officerCertificate('Achievement 14', 'C/Maj', { device: '1diamond' }),
   'Achievement 15': officerCertificate('Achievement 15', null, { device: '1diamond' }),
   'Achievement 16': officerCertificate('Achievement 16', null, { device: '1diamond' }),
-  'Gen Ira C Eaker': officerCertificate('Gen Ira C. Eaker', 'C/Lt Col', { device: '2diamond', ribbon: 'eaker' }),
+  'Gen Ira C Eaker': officerCertificate('Gen Ira C. Eaker Award', 'C/Lt Col', { device: '2diamond', ribbon: 'eaker' }),
   'Gen Carl A Spaatz': officerCertificate('Gen Carl A. Spaatz Award', 'C/Col', { device: '3diamond', ribbon: 'spaatz' })
 };
 const ATTENDANCE_LISTS = [
@@ -2053,9 +2055,11 @@ function buildPromotionCertificateRow(cadet) {
 
   // Everyone else is certified for the promotion they just left, but a finished top of
   // the ladder is certified for itself. There is no promotion approval behind it, so it
-  // carries no award date.
+  // is dated by the day its last requirement was met. If the report lacks a date for
+  // any requirement, the certificate prints undated.
   if (cadet.awardComplete) {
     const earnedAward = requirements[currentIndex];
+    const awardDate = getRequirementsCompletionDate(cadet);
 
     return {
       key: cadet.key,
@@ -2063,9 +2067,9 @@ function buildPromotionCertificateRow(cadet) {
       name: cadet.name,
       newGrade: clean(earnedAward.Rank || earnedAward.Grade),
       promotionName: clean(earnedAward.Achievement),
-      awardDate: null,
-      awardDateText: '',
-      datelessAward: true
+      awardDate,
+      awardDateText: awardDate ? formatDate(awardDate) : '',
+      datelessAward: !awardDate
     };
   }
 
@@ -2085,6 +2089,48 @@ function buildPromotionCertificateRow(cadet) {
     awardDateText: formatDate(awardDate),
     datelessAward: false
   };
+}
+
+// When each requirement in buildChecks was met, read from the report's date columns.
+// A test or module counts from the earliest way the cadet passed it.
+const CHECK_COMPLETION_DATES = {
+  'Physical Fitness': raw => parseDate(raw.PhyFitTest),
+  'Leadership Test or Module': raw => earliestDate(
+    passScore(raw.LeadLabDateP, raw.LeadLabScore) ? parseDate(raw.LeadLabDateP) : null,
+    parseDate(raw.LeadershipInteractiveDate)
+  ),
+  'Aerospace Test or Module': raw => earliestDate(
+    passScore(raw.AEDateP, raw.AEScore) ? parseDate(raw.AEDateP) : null,
+    parseDate(raw.AEInteractiveDate)
+  ),
+  'Drill': raw => parseDate(raw.DrillDate),
+  'Character Development': raw => parseDate(raw.CharacterDevelopment),
+  'Active Participation': raw => parseDate(raw.ActiveParticipationDate),
+  'Cadet Oath': raw => parseDate(raw.CadetOathDate),
+  'Uniform': raw => parseDate(raw.UniformDate),
+  'Leadership Expectations': raw => parseDate(raw.LeadershipExpectationsDate),
+  'Cadet Welcome Course': raw => parseDate(raw.WelcomeCourseDate),
+  'Encampment': raw => parseDate(raw.SpecialActivityDate),
+  'Officer Leadership Course / Special Activity': raw => parseDate(raw.SpecialActivityDate),
+  'Essay': raw => parseDate(raw.EssayDate),
+  'Speech': raw => parseDate(raw.SpeechDate)
+};
+
+function getRequirementsCompletionDate(cadet) {
+  if (!cadet.checks.length) return null;
+
+  const dates = cadet.checks.map(check => {
+    const getDate = CHECK_COMPLETION_DATES[check.name];
+    return check.done && getDate ? getDate(cadet.raw) : null;
+  });
+  if (dates.some(date => !date)) return null;
+
+  return dates.reduce((latest, date) => (date > latest ? date : latest));
+}
+
+function earliestDate(...dates) {
+  const found = dates.filter(Boolean);
+  return found.length ? found.reduce((earliest, date) => (date < earliest ? date : earliest)) : null;
 }
 
 function getAllPromotionCertificateRows() {
