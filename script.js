@@ -11,6 +11,14 @@ const DASHBOARD_SORT_DEFAULT = 'dueDate';
 const DUE_SORT_DEFAULT = 'dueAsc';
 const CHANGELOG = [
   {
+    version: '0.6.2',
+    date: 'November 19, 2026',
+    title: 'Achievement 1 Requirements',
+    changes: [
+      'The Aerospace test or module is no longer required for Achievement 1, and the change applies everywhere that requirement is counted.'
+    ]
+  },
+  {
     version: '0.6.1',
     date: 'September 1, 2026',
     title: 'Spaatz Criteria & Certificate Printing',
@@ -171,7 +179,7 @@ const ATTENDANCE_LISTS = [
   }
 ];
 const BUILT_IN_REQUIREMENTS_CSV = `Achievement,Rank,Physical Fitness,Leadership,Drill,Aerospace Education,Character Development,Active Participation,Cadet Oath,Uniform,Leadership Expectations,Special Activity,SDAStaffServiceDate,SDAOralPresentationDate,SDATechnicalWritingAssignmentDate,SDATechnicalWritingAssignment
-Achievement 1,C/Amn,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,None,Pass,Cadet Welcome Course,None,None,None,None
+Achievement 1,C/Amn,Attempt,Pass,Pass,None,Pass,Pass,Pass,None,Pass,Cadet Welcome Course,None,None,None,None
 Achievement 2,C/A1C,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
 Achievement 3,C/SrA,Attempt,Pass,Pass,Pass,Pass,Pass,Pass,Pass,Pass,None,None,None,None,None
 Wright Brothers,C/SSgt,Pass,Pass,Pass,None,None,Pass,Pass,Pass,Pass,None,None,None,None,None
