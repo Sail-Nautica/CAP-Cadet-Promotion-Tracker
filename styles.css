@@ -475,6 +475,16 @@ input[type="file"].visually-hidden {
   box-shadow: 0 12px 26px rgba(15, 39, 71, 0.08);
 }
 
+.stalled-blockers {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.stalled-blockers:empty {
+  display: none;
+}
+
 .summary-card {
   padding: 14px 16px;
   border: 1px solid rgba(174, 190, 210, 0.84);
@@ -1008,7 +1018,8 @@ tr:hover td {
 }
 
 .hidden {
-  display: none;
+  /* Hiding always wins over a component's own display rule. */
+  display: none !important;
 }
 
 .site-footer {

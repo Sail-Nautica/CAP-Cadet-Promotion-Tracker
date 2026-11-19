@@ -412,10 +412,19 @@
             <span>Report Type</span>
             <select id="printReportType">
               <option value="promotionCertificates">Promotion Certificates</option>
+              <option value="stalledCadets">Stalled Cadets</option>
             </select>
           </label>
 
-          <label>
+          <label data-report-type="stalledCadets" class="hidden">
+            <span>In Grade At Least</span>
+            <div class="inline-input">
+              <input id="stalledMinDays" type="number" min="1" step="1" value="120" />
+              <span>days</span>
+            </div>
+          </label>
+
+          <label data-report-type="promotionCertificates">
             <span>Promotion Options</span>
             <select id="promotionCertificatePreset">
               <option value="all">ALL Promotions</option>
@@ -424,7 +433,7 @@
             </select>
           </label>
 
-          <label>
+          <label data-report-type="promotionCertificates">
             <span>Received in Past</span>
             <div class="inline-input">
               <input id="promotionCertificateMonths" type="number" min="1" step="1" placeholder="Any" />
@@ -433,16 +442,30 @@
           </label>
         </div>
 
-        <div id="promotionCertificateCustomPicker" class="promotion-picker hidden"></div>
+        <div data-report-type="promotionCertificates">
+          <div id="promotionCertificateCustomPicker" class="promotion-picker hidden"></div>
 
-        <div class="print-report-actions">
-          <button id="printPromotionCertificatesButton" class="primary-button" type="button">Print Certificates</button>
+          <div class="print-report-actions">
+            <button id="printPromotionCertificatesButton" class="primary-button" type="button">Print Certificates</button>
+          </div>
+
+          <div class="table-wrap"><table id="promotionCertificatePreviewTable"></table></div>
         </div>
 
-        <div class="table-wrap"><table id="promotionCertificatePreviewTable"></table></div>
+        <div data-report-type="stalledCadets" class="hidden">
+          <p class="note">Cadets who have held their grade at least this long without promoting, longest first. Time in grade counts from the cadet's last promotion approval. Cadets excluded from the main dashboard and cadets who have completed Spaatz are left out.</p>
+          <div id="stalledSummary" class="summary-grid"></div>
+          <div id="stalledBlockers" class="stalled-blockers"></div>
+
+          <div class="print-report-actions">
+            <button id="printStalledCadetsButton" class="primary-button" type="button">Print Stalled Cadets</button>
+          </div>
+
+          <div class="table-wrap"><table id="stalledCadetsTable"></table></div>
+        </div>
       </div>
 
-      <div class="card">
+      <div class="card" data-report-type="promotionCertificates">
         <div class="card-heading">
           <div>
             <h2>Certificate Exclusions</h2>

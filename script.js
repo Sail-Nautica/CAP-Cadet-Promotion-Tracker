@@ -11,6 +11,17 @@ const DASHBOARD_SORT_DEFAULT = 'dueDate';
 const DUE_SORT_DEFAULT = 'dueAsc';
 const CHANGELOG = [
   {
+    version: '0.9',
+    date: 'November 19, 2026',
+    title: 'Stalled Cadets Report',
+    changes: [
+      'Added a Stalled Cadets report to the Print Reports tab. It lists cadets who have held their grade at least a chosen number of days, 120 by default, longest first.',
+      'Each stalled cadet shows when they last promoted, their latest requirement activity since then, and what they still need.',
+      'The report counts the most common blockers, flags cadets with no activity since their last promotion, and separates cadets who have met every requirement and are only waiting on approval.',
+      'The Stalled Cadets report can be printed.'
+    ]
+  },
+  {
     version: '0.8',
     date: 'November 19, 2026',
     title: 'New Certificate Template',
@@ -340,6 +351,9 @@ document.getElementById('promotionCertificatePreset').addEventListener('change',
 document.getElementById('promotionCertificateMonths').addEventListener('input', renderPromotionCertificateReport);
 document.getElementById('promotionCertificateCustomPicker').addEventListener('change', renderPromotionCertificateReport);
 document.getElementById('printPromotionCertificatesButton').addEventListener('click', handlePrintPromotionCertificatesReport);
+document.getElementById('printReportType').addEventListener('change', applyPrintReportType);
+document.getElementById('stalledMinDays').addEventListener('input', renderStalledCadetsReport);
+document.getElementById('printStalledCadetsButton').addEventListener('click', handlePrintStalledCadetsReport);
 window.addEventListener('afterprint', () => document.body.classList.remove('printing-report'));
 document.querySelectorAll('.dashboard-sort').forEach(select => {
   select.value = dashboardSorts[select.dataset.section] || DASHBOARD_SORT_DEFAULT;
@@ -936,6 +950,9 @@ function analyzeCadet(raw, promotionHistory = null) {
   else if (daysUntil !== null && daysUntil <= SOON_DAYS) status = 'Due Soon';
   else status = 'Not Ready';
 
+  const inGradeSince = findInGradeSince(raw, promotionHistory);
+  const lastActivity = findLastActivitySince(raw, inGradeSince);
+
   return {
     raw,
     key: cadetKey(raw),
@@ -956,8 +973,50 @@ function analyzeCadet(raw, promotionHistory = null) {
     total,
     missing,
     promotionHistory,
+    inGradeSince,
+    daysInGrade: inGradeSince ? Math.floor((today - startOfDay(inGradeSince)) / 86400000) : null,
+    lastActivity,
     progress: Math.round((completed / total) * 100)
   };
+}
+
+// A cadet holds their grade from the approval of the achievement before the one they are
+// working on. An all-promotions report has that date; otherwise eServices sets the next
+// approval date 56 days after it, and a cadet still on Achievement 1 counts from joining.
+function findInGradeSince(raw, promotionHistory) {
+  const previous = promotionHistory && promotionHistory.length > 1
+    ? promotionHistory[promotionHistory.length - 2]
+    : null;
+  if (previous && previous.approvalDate) return previous.approvalDate;
+
+  return lastPromotionFromNextApproval(raw) || parseDate(raw.JoinDate);
+}
+
+// eServices sets the next approval date 56 days after the last promotion, except for a
+// cadet working on Spaatz, where it is the Eaker approval date itself.
+function lastPromotionFromNextApproval(raw) {
+  const nextApprovalDate = parseDate(raw.NextApprovalDate);
+  if (!nextApprovalDate) return null;
+  return isTerminalAchievement(clean(raw.AchvName)) ? nextApprovalDate : addDays(nextApprovalDate, -56);
+}
+
+// Requirement dates on the current row that fall after the last promotion show the cadet
+// is still working; older dates carry over from earlier achievements.
+const ACTIVITY_DATE_FIELDS = [
+  'PhyFitTest', 'LeadLabDateP', 'LeadershipInteractiveDate', 'AEDateP', 'AEInteractiveDate',
+  'CharacterDevelopment', 'ActiveParticipationDate', 'CadetOathDate', 'LeadershipExpectationsDate',
+  'UniformDate', 'SpecialActivityDate', 'DrillDate', 'WelcomeCourseDate', 'EssayDate', 'SpeechDate',
+  'StaffServiceDate', 'OralPresentationDate', 'TechnicalWritingAssignmentDate'
+];
+
+function findLastActivitySince(raw, sinceDate) {
+  if (!sinceDate) return null;
+  const since = startOfDay(sinceDate);
+
+  return ACTIVITY_DATE_FIELDS
+    .map(field => parseDate(raw[field]))
+    .filter(date => date && startOfDay(date) > since)
+    .reduce((latest, date) => (!latest || date > latest ? date : latest), null);
 }
 
 function findRequirementForAchievement(achievement) {
@@ -1046,6 +1105,7 @@ function renderAll() {
   renderRequirements();
   renderAttendanceScanner();
   renderPromotionCertificateReport();
+  renderStalledCadetsReport();
 }
 
 function renderStats() {
@@ -1870,9 +1930,174 @@ function renderPromotionCertificateReport() {
   renderPromotionCertificatePicker();
 
   const rows = getPromotionCertificateRows();
-  document.getElementById('printReportCount').textContent = formatCertificateCount(rows.length);
   renderPromotionCertificatePreview(rows);
   renderCertificateExclusions();
+  updatePrintReportCount();
+}
+
+function getPrintReportType() {
+  return document.getElementById('printReportType').value;
+}
+
+// The Print Reports card shows the controls and preview for whichever report is chosen.
+function applyPrintReportType() {
+  const reportType = getPrintReportType();
+  document.querySelectorAll('[data-report-type]').forEach(element => {
+    element.classList.toggle('hidden', element.dataset.reportType !== reportType);
+  });
+  updatePrintReportCount();
+}
+
+function updatePrintReportCount() {
+  const badge = document.getElementById('printReportCount');
+  badge.textContent = getPrintReportType() === 'stalledCadets'
+    ? formatCadetCount(getStalledCadetRows().length)
+    : formatCertificateCount(getPromotionCertificateRows().length);
+}
+
+function getStalledMinDays() {
+  const days = Number.parseInt(document.getElementById('stalledMinDays').value, 10);
+  return Number.isFinite(days) && days > 0 ? days : 120;
+}
+
+function getStalledCadetRows() {
+  const minDays = getStalledMinDays();
+
+  return getDashboardCadets()
+    .filter(cadet => cadet.status !== 'Completed' && cadet.daysInGrade !== null && cadet.daysInGrade >= minDays)
+    .sort((left, right) => (right.daysInGrade - left.daysInGrade) || compareText(left.name, right.name));
+}
+
+// A cadet who has met every requirement is waiting on approval, not on their own work.
+function getStalledBlockers(cadet) {
+  return cadet.ready ? ['Awaiting approval'] : cadet.missing;
+}
+
+function countStalledBlockers(rows) {
+  const counts = new Map();
+  rows.forEach(cadet => getStalledBlockers(cadet).forEach(blocker => {
+    counts.set(blocker, (counts.get(blocker) || 0) + 1);
+  }));
+  return [...counts].sort((left, right) => (right[1] - left[1]) || left[0].localeCompare(right[0]));
+}
+
+function renderStalledCadetsReport() {
+  const rows = getStalledCadetRows();
+  const minDays = getStalledMinDays();
+  const noActivity = rows.filter(cadet => !cadet.lastActivity).length;
+  const awaitingApproval = rows.filter(cadet => cadet.ready).length;
+
+  document.getElementById('stalledSummary').innerHTML = [
+    [rows.length, `In grade ${minDays}+ days`],
+    [noActivity, 'No activity since promotion'],
+    [awaitingApproval, 'Awaiting approval'],
+    [rows.length ? formatDuration(rows[0].daysInGrade) : 'None', 'Longest in grade']
+  ].map(([value, label]) => `<div class="summary-card">
+      <div class="summary-num">${esc(value)}</div>
+      <div class="summary-label">${esc(label)}</div>
+    </div>`).join('');
+
+  const blockers = countStalledBlockers(rows);
+  document.getElementById('stalledBlockers').innerHTML = blockers.length
+    ? `<strong>Most common blockers</strong>
+      <div class="missing-list">${blockers.map(([blocker, count]) =>
+    `<span class="pill ${blocker === 'Awaiting approval' ? 'pill-complete' : 'pill-incomplete'}">${esc(blocker)} <b>${count}</b></span>`
+  ).join('')}</div>`
+    : '';
+
+  const table = document.getElementById('stalledCadetsTable');
+  if (!cadets.length) {
+    table.innerHTML = '<tr><td class="empty">Upload a cadet full-track report to find stalled cadets.</td></tr>';
+  } else if (!rows.length) {
+    table.innerHTML = `<tr><td class="empty">No cadets have been in grade ${minDays} days or more.</td></tr>`;
+  } else {
+    table.innerHTML = `<thead><tr>
+        <th>Cadet</th>
+        <th>Working On</th>
+        <th>In Grade Since</th>
+        <th>Last Activity</th>
+        <th>Still Needs</th>
+      </tr></thead><tbody>` +
+      rows.map(cadet => `<tr>
+        <td><strong>${esc(cadet.name || 'Unknown')}</strong><br><span class="note">CAPID ${esc(cadet.capid || '')}</span></td>
+        <td><strong class="achievement-name">${esc(cadet.achievement || 'Unknown')}</strong>${cadet.rank ? `<br><span class="achievement-rank">${esc(cadet.rank)}</span>` : ''}</td>
+        <td>${formatDate(cadet.inGradeSince)}<br><span class="note">${formatDuration(cadet.daysInGrade)}</span></td>
+        <td>${renderLastActivity(cadet)}</td>
+        <td><div class="missing-list">${getStalledBlockers(cadet).map(blocker =>
+    `<span class="pill ${cadet.ready ? 'pill-complete' : 'pill-incomplete'}">${esc(blocker)}</span>`
+  ).join('')}</div></td>
+      </tr>`).join('') +
+      '</tbody>';
+  }
+
+  updatePrintReportCount();
+}
+
+function renderLastActivity(cadet) {
+  if (!cadet.lastActivity) return '<span class="badge overdue">None since promotion</span>';
+  return `${formatDate(cadet.lastActivity)}<br><span class="note">${formatDuration(daysSince(cadet.lastActivity))} ago</span>`;
+}
+
+function lastActivityText(cadet) {
+  return cadet.lastActivity
+    ? `${formatDate(cadet.lastActivity)} (${formatDuration(daysSince(cadet.lastActivity))} ago)`
+    : 'None since promotion';
+}
+
+function daysSince(date) {
+  return Math.floor((today - startOfDay(date)) / 86400000);
+}
+
+function formatDuration(days) {
+  if (days === null || days === undefined) return 'Unknown';
+  if (days < 60) return `${days} day${days === 1 ? '' : 's'}`;
+  const months = Math.floor(days / 30.44);
+  if (months < 24) return `${months} months`;
+  const years = Math.floor(months / 12);
+  const extraMonths = months % 12;
+  return `${years} years${extraMonths ? `, ${extraMonths} mo` : ''}`;
+}
+
+function handlePrintStalledCadetsReport() {
+  const rows = getStalledCadetRows();
+  if (!rows.length) {
+    setStatusMessage('No stalled cadets match the current threshold.', 'error');
+    return;
+  }
+
+  clearPrintReports();
+  renderPrintableStalledCadetsReport(rows);
+  document.body.classList.add('printing-report');
+  window.print();
+}
+
+function renderPrintableStalledCadetsReport(rows) {
+  const minDays = getStalledMinDays();
+  const blockers = countStalledBlockers(rows)
+    .slice(0, 6)
+    .map(([blocker, count]) => `${blocker} (${count})`)
+    .join(', ');
+
+  document.getElementById('printReportsPrintReport').innerHTML = `
+    <div class="print-report-header">
+      <h1>Stalled Cadets</h1>
+      <p>${esc(loadedFileName || 'No report file loaded')} | Printed ${esc(dateFormatter.format(new Date()))}</p>
+      <p>${esc(formatCadetCount(rows.length))} in grade ${minDays} days or more. Most common blockers: ${esc(blockers || 'None')}.</p>
+    </div>
+    ${renderPrintTable(
+      'Longest in grade first',
+      ['Name', 'Working On', 'In Grade Since', 'Time in Grade', 'Last Activity', 'Still Needs'],
+      rows.map(cadet => [
+        cadet.name || 'Unknown',
+        cadet.rank ? `${cadet.achievement} (${cadet.rank})` : cadet.achievement,
+        formatDate(cadet.inGradeSince),
+        formatDuration(cadet.daysInGrade),
+        lastActivityText(cadet),
+        getStalledBlockers(cadet).join(', ')
+      ]),
+      'No stalled cadets.'
+    )}
+  `;
 }
 
 function renderCertificateExclusions() {
@@ -2115,7 +2340,7 @@ function buildPromotionCertificateRows(cadet) {
   }
 
   // A latest-only report shows just the achievement in progress, so the certificate is
-  // for the promotion just left, dated 56 days before the next approval date.
+  // for the promotion just left, dated from the next approval date.
   if (cadet.awardComplete) return terminalRows;
 
   const currentIndex = requirements.findIndex(row =>
@@ -2123,7 +2348,7 @@ function buildPromotionCertificateRows(cadet) {
   );
   if (currentIndex <= 0) return [];
 
-  const awardDate = addDays(parseDate(cadet.raw.NextApprovalDate), -56);
+  const awardDate = lastPromotionFromNextApproval(cadet.raw);
   return [buildCertificateRow(cadet, requirements[currentIndex - 1].Achievement, awardDate)];
 }
 
