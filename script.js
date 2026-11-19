@@ -11,6 +11,17 @@ const DASHBOARD_SORT_DEFAULT = 'dueDate';
 const DUE_SORT_DEFAULT = 'dueAsc';
 const CHANGELOG = [
   {
+    version: '0.7',
+    date: 'November 19, 2026',
+    title: 'All Promotions Reports',
+    changes: [
+      'The full-track report can now be loaded as either the latest-only export or the all-promotions export. The type is detected automatically and shown when the report loads.',
+      'With an all-promotions report, each cadet is tracked once at their highest achievement instead of appearing once per past achievement.',
+      'With an all-promotions report, promotion certificates use the actual approval date of each promotion, and every promotion inside the lookahead window gets a certificate.',
+      'A certificate with no known award date now prints without a date instead of printing "Unknown".'
+    ]
+  },
+  {
     version: '0.6.1',
     date: 'September 1, 2026',
     title: 'Spaatz Criteria & Certificate Printing',
@@ -302,7 +313,8 @@ async function processCadetFile(file) {
     setStatusMessage(`Loading ${file.name}...`, 'info');
     const rows = await loadCadetRows(file);
     validateCadetRows(rows);
-    cadets = rows.map(analyzeCadet);
+    const report = groupCadetReport(rows);
+    cadets = report.cadets.map(entry => analyzeCadet(entry.raw, entry.history));
     loadedFileName = file.name;
     populateAchievementFilter();
     populateDrillAchievementFilter();
@@ -311,8 +323,11 @@ async function processCadetFile(file) {
     showDashboard();
 
     const visibleCount = getDashboardCadets().length;
+    const reportTypeText = report.isAllPromotions
+      ? `All promotions report (${report.rowCount} rows).`
+      : 'Latest promotion report.';
     setStatusMessage(
-      `${cadets.length} cadets loaded from ${file.name}. ${visibleCount} currently shown on the main dashboard.`,
+      `${cadets.length} cadets loaded from ${file.name}. ${reportTypeText} ${visibleCount} currently shown on the main dashboard.`,
       'success'
     );
   } catch (error) {
@@ -380,6 +395,36 @@ function validateCadetRows(rows) {
   if (!headers.has('AchvName') || !headers.has('CAPID') || !hasCadetName) {
     throw new Error('That file does not look like a cadet full-track report. Upload the export with CAPID, cadet name, and achievement columns.');
   }
+}
+
+// eServices exports the full-track report two ways: "latest only" has one row per cadet
+// for the achievement they are working on, and "all promotions" adds a row for every
+// earlier achievement with its approval date. Either way the dashboard tracks the
+// highest achievement per cadet; the earlier rows are kept as promotion history.
+function groupCadetReport(rows) {
+  const groups = new Map();
+  rows.forEach(raw => {
+    const groupKey = clean(raw.CAPID) ||
+      `${clean(raw.NameLast).toLowerCase()}|${clean(raw.NameFirst).toLowerCase()}`;
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey).push(raw);
+  });
+
+  const isAllPromotions = [...groups.values()].some(group => group.length > 1);
+  const groupedCadets = [...groups.values()].map(group => {
+    const ordered = [...group].sort((left, right) =>
+      achievementOrder(clean(left.AchvName)) - achievementOrder(clean(right.AchvName))
+    );
+
+    return {
+      raw: ordered[ordered.length - 1],
+      history: isAllPromotions
+        ? ordered.map(row => ({ achievement: clean(row.AchvName), approvalDate: parseDate(row.AprDate) }))
+        : null
+    };
+  });
+
+  return { isAllPromotions, rowCount: rows.length, cadets: groupedCadets };
 }
 
 function handleActionClick(event) {
@@ -810,7 +855,7 @@ function parseCSV(text) {
   ));
 }
 
-function analyzeCadet(raw) {
+function analyzeCadet(raw, promotionHistory = null) {
   const achievement = clean(raw.AchvName);
   const requirementRow = findRequirementForAchievement(achievement);
   const rank = clean(requirementRow.Rank || requirementRow.Grade);
@@ -850,6 +895,7 @@ function analyzeCadet(raw) {
     completed,
     total,
     missing,
+    promotionHistory,
     progress: Math.round((completed / total) * 100)
   };
 }
@@ -1935,59 +1981,49 @@ function getVisibleUniformRows() {
 }
 
 function getPromotionCertificateRows() {
-  const selectedPromotions = getSelectedCertificatePromotions();
-  const cutoffDate = getPromotionCertificateCutoffDate();
-
-  return cadets
-    .map(buildPromotionCertificateRow)
-    .filter(Boolean)
-    .filter(row => selectedPromotions.has(row.promotionName))
-    .filter(row => !cutoffDate || row.datelessAward || (row.awardDate && startOfDay(row.awardDate) >= cutoffDate))
-    .filter(row => !excludedCertificateKeys.has(row.key))
-    .sort((left, right) =>
-      comparePromotionCertificateRows(left, right)
-    );
+  return getAllPromotionCertificateRows().filter(row => !excludedCertificateKeys.has(row.key));
 }
 
-function buildPromotionCertificateRow(cadet) {
+function buildPromotionCertificateRows(cadet) {
+  // A finished top of the ladder is certified for itself. There is no promotion
+  // approval behind it, so it carries no award date.
+  const terminalRows = cadet.awardComplete
+    ? [{ ...buildCertificateRow(cadet, cadet.achievement, null), datelessAward: true }]
+    : [];
+
+  // An all-promotions report carries the real approval date of every earlier
+  // achievement, so each one gets its own certificate.
+  if (cadet.promotionHistory) {
+    const approvedRows = cadet.promotionHistory
+      .filter(entry => entry.approvalDate && !isTerminalAchievement(entry.achievement))
+      .map(entry => buildCertificateRow(cadet, entry.achievement, entry.approvalDate));
+    return [...approvedRows, ...terminalRows];
+  }
+
+  // A latest-only report shows just the achievement in progress, so the certificate is
+  // for the promotion just left, dated 56 days before the next approval date.
+  if (cadet.awardComplete) return terminalRows;
+
   const currentIndex = requirements.findIndex(row =>
     clean(row.Achievement).toLowerCase() === clean(cadet.achievement).toLowerCase()
   );
+  if (currentIndex <= 0) return [];
 
-  if (currentIndex < 0) return null;
+  const awardDate = addDays(parseDate(cadet.raw.NextApprovalDate), -56);
+  return [buildCertificateRow(cadet, requirements[currentIndex - 1].Achievement, awardDate)];
+}
 
-  // Everyone else is certified for the promotion they just left, but a finished top of
-  // the ladder is certified for itself. There is no promotion approval behind it, so it
-  // carries no award date.
-  if (cadet.awardComplete) {
-    const earnedAward = requirements[currentIndex];
-
-    return {
-      key: cadet.key,
-      capid: cadet.capid,
-      name: cadet.name,
-      newGrade: clean(earnedAward.Rank || earnedAward.Grade),
-      promotionName: clean(earnedAward.Achievement),
-      awardDate: null,
-      awardDateText: '',
-      datelessAward: true
-    };
-  }
-
-  if (currentIndex === 0) return null;
-
-  const awardedPromotion = requirements[currentIndex - 1];
-  const nextApprovalDate = parseDate(cadet.raw.NextApprovalDate);
-  const awardDate = addDays(nextApprovalDate, -56);
+function buildCertificateRow(cadet, achievement, awardDate) {
+  const requirementRow = findRequirementForAchievement(achievement);
 
   return {
     key: cadet.key,
     capid: cadet.capid,
     name: cadet.name,
-    newGrade: clean(awardedPromotion.Rank || awardedPromotion.Grade),
-    promotionName: clean(awardedPromotion.Achievement),
+    newGrade: clean(requirementRow.Rank || requirementRow.Grade),
+    promotionName: clean(requirementRow.Achievement || achievement),
     awardDate,
-    awardDateText: formatDate(awardDate),
+    awardDateText: awardDate ? formatDate(awardDate) : '',
     datelessAward: false
   };
 }
@@ -1997,8 +2033,7 @@ function getAllPromotionCertificateRows() {
   const cutoffDate = getPromotionCertificateCutoffDate();
 
   return cadets
-    .map(buildPromotionCertificateRow)
-    .filter(Boolean)
+    .flatMap(buildPromotionCertificateRows)
     .filter(row => selectedPromotions.has(row.promotionName))
     .filter(row => !cutoffDate || row.datelessAward || (row.awardDate && startOfDay(row.awardDate) >= cutoffDate))
     .sort((left, right) =>
@@ -2007,7 +2042,13 @@ function getAllPromotionCertificateRows() {
 }
 
 function getExcludedCertificateRows() {
-  return getAllPromotionCertificateRows().filter(row => excludedCertificateKeys.has(row.key));
+  // An all-promotions report can give one cadet several certificates; list them once.
+  const seenKeys = new Set();
+  return getAllPromotionCertificateRows().filter(row => {
+    if (!excludedCertificateKeys.has(row.key) || seenKeys.has(row.key)) return false;
+    seenKeys.add(row.key);
+    return true;
+  });
 }
 
 function getSelectedCertificatePromotions() {
