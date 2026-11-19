@@ -1113,7 +1113,7 @@ tr:hover td {
   body.printing-report header,
   body.printing-report main,
   body.printing-report .site-footer {
-    display: none;
+    display: none !important;
   }
 
   body.printing-report .print-report:not(:empty) {
@@ -1234,84 +1234,149 @@ tr:hover td {
     page-break-before: auto;
   }
 
-  /* Certificates are drawn on the template slide's 10in x 5.625in grid. Positions are
-     set inline in slide inches, where one slide inch is 10cqw of the panel. */
   .certificate-panel {
     position: relative;
-    container-type: inline-size;
-    width: 10.4in;
-    max-width: 100%;
-    aspect-ratio: 16 / 9;
+    display: grid;
+    align-items: center;
+    align-content: center;
+    gap: 0.15in;
+    width: 100%;
+    max-width: 9.5in;
+    aspect-ratio: 3 / 2;
     margin: 0 auto;
-    overflow: hidden;
+    padding: 0.45in 0.55in;
+    border: 10px double var(--cap-blue-900, #0f2747);
+    color: #111;
     background: #fff;
-    color: #001689;
-    font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
-    font-weight: 700;
   }
 
-  .cert-art {
-    position: absolute;
-    max-width: none;
-    width: auto;
+  .cert-enlisted {
+    grid-template-columns: 1.9in 1fr 1.7in;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas:
+      "insignia body seal"
+      "insignia body wings";
+  }
+
+  .cert-officer {
+    grid-template-columns: 1.8in 1fr 1.8in;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "devices devices devices"
+      "seal body wings";
+  }
+
+  .cert-insignia,
+  .cert-devices,
+  .cert-seal,
+  .cert-wings {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cert-insignia { grid-area: insignia; }
+  .cert-devices { grid-area: devices; margin-bottom: 0.1in; }
+  .cert-seal { grid-area: seal; }
+  .cert-wings { grid-area: wings; }
+  .cert-body { grid-area: body; text-align: center; }
+
+  .cert-insignia img {
+    width: 1.65in;
     height: auto;
   }
 
-  /* The ribbons are small bitmaps scaled up; keep their stripes sharp. */
-  .cert-ribbon {
-    image-rendering: pixelated;
+  .cert-devices img {
+    max-height: 0.5in;
+    width: auto;
   }
 
-  .cert-name-line {
-    position: absolute;
-    left: calc(2.583 * 10cqw);
-    width: calc(4.834 * 10cqw);
-    border-top: 0.75pt solid #595959;
+  .cert-officer .cert-devices img {
+    max-height: 1.05in;
   }
 
-  .cert-body {
-    position: absolute;
-    left: calc(2.487 * 10cqw);
-    width: calc(5.026 * 10cqw);
-    box-sizing: border-box;
-    padding: calc(0.1 * 10cqw);
-    text-align: center;
-    line-height: 1.257;
+  .cert-seal img {
+    width: 1.5in;
+    height: auto;
   }
 
-  .cert-body p {
-    margin: 0;
+  .cert-officer .cert-seal img {
+    width: 1.6in;
   }
 
-  /* 26pt and 12pt on the slide, with the slide's blank lines kept as spacing. */
-  .cert-heading {
-    font-size: calc(26 / 72 * 10cqw);
+  .cert-wings img {
+    width: 1.2in;
+    height: auto;
   }
 
-  .cert-body .cert-title {
-    margin-bottom: 1.257em;
+  .cert-officer .cert-wings img {
+    width: 1.3in;
   }
 
-  .cert-body .cert-presented {
-    font-size: calc(12 / 72 * 10cqw);
-    margin-bottom: 1.257em;
+  .cert-org {
+    margin: 0 0 2px;
+    color: var(--cap-blue-900, #0f2747);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 13pt;
   }
 
-  .cert-body .cert-name {
-    line-height: calc(26 / 72 * 1.257 * 10cqw);
-    margin-bottom: calc(12 / 72 * 1.257 * 10cqw);
+  .cert-title {
+    margin: 0 0 0.22in;
+    color: var(--cap-blue-900, #0f2747);
+    text-transform: uppercase;
+    font-size: 21pt;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  .cert-title-milestone {
+    font-size: 15pt;
+  }
+
+  .cert-honoree {
+    margin: -0.14in 0 0.14in;
+    color: var(--cap-blue-900, #0f2747);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 12pt;
     white-space: nowrap;
   }
 
-  .cert-body .cert-requirements {
-    font-size: calc(12 / 72 * 10cqw);
-    min-height: 2.514em;
-    margin-bottom: 1.257em;
+  .cert-presented {
+    margin: 0 0 0.08in;
+    color: #555;
+    font-weight: 700;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cert-name {
+    margin: 0 auto 0.16in;
+    padding: 0 0.1in 0.08in;
+    border-bottom: 1px solid var(--cap-blue-900, #0f2747);
+    display: inline-block;
+    min-width: 3.4in;
+    color: var(--cap-blue-900, #0f2747);
+    font-size: 19pt;
+    font-weight: 800;
+  }
+
+  .cert-requirements {
+    margin: 0 auto 0.18in;
+    color: #222;
+    font-size: 11pt;
+    font-weight: 700;
+    max-width: 4.6in;
   }
 
   .cert-date {
-    font-size: calc(26 / 72 * 10cqw);
-    min-height: 1.257em;
+    margin: 0;
+    color: var(--cap-blue-900, #0f2747);
+    font-size: 13pt;
+    font-weight: 800;
   }
 }
 
