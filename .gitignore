@@ -1,1 +1,6 @@
 datasheet/
+
+# Cadet reports hold names, CAPIDs and emails; never commit them.
+Cadet_Full_Track_Report*
+*.xlsx
+*.xls
