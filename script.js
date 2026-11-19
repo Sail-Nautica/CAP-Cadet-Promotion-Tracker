@@ -11,6 +11,17 @@ const DASHBOARD_SORT_DEFAULT = 'dueDate';
 const DUE_SORT_DEFAULT = 'dueAsc';
 const CHANGELOG = [
   {
+    version: '0.8',
+    date: 'November 19, 2026',
+    title: 'New Certificate Template',
+    changes: [
+      'Promotion certificates now follow the Promotion Certificates slide deck, with every ribbon, insignia, grade device, seal, and line placed where the deck puts it.',
+      'Added achievement and milestone ribbons and the squadron patch to the certificates.',
+      'Certificate text now uses the Merriweather typeface and the wording from the deck. A long cadet name or title shrinks to stay on one line.',
+      'Printing waits for the certificate typeface and artwork to load before the print dialog opens.'
+    ]
+  },
+  {
     version: '0.7',
     date: 'November 19, 2026',
     title: 'All Promotions Reports',
@@ -135,28 +146,71 @@ const CERTIFICATE_MILESTONE_AND_CURRY_PROMOTIONS = [
   'Gen Ira C Eaker',
   'Gen Carl A Spaatz'
 ];
+// Certificates copy the Promotion Certificates slide deck: a 10in x 5.625in slide with
+// every picture, text box and rule placed at the deck's coordinates, in inches.
+const CERTIFICATE_ART = 'assets/certificates/';
+const CERTIFICATE_FONT_FAMILY = "'Merriweather', Georgia, serif";
+const CERTIFICATE_TEXT_BOX = { x: 2.487, w: 5.026, enlistedTop: 1.011, officerTop: 1.387 };
+const CERTIFICATE_SEAL_AND_WINGS = [
+  { src: 'seal.png', x: 7.513, y: 0.505, w: 2.344, h: 2.344 },
+  { src: 'wings.png', x: 7.513, y: 2.776, w: 2.344, h: 2.344 }
+];
+// The squadron patch is cropped to drop the black frame around the scan.
+const CERTIFICATE_PATCH_CROP = { l: 5.187, r: 5.845, t: 4.719, b: 5.232 };
+
+function enlistedCertificate(title, rank, ribbon, ribbonY, insignia, insigniaY, insigniaH, x = 0.44) {
+  return {
+    title,
+    rank,
+    layout: 'enlisted',
+    art: [
+      { src: `ribbon-${ribbon}.png`, x, y: ribbonY, w: 1.749, h: 0.525 },
+      { src: `insignia-${insignia}.png`, x, y: insigniaY, w: 1.749, h: insigniaH }
+    ]
+  };
+}
+
+function officerCertificate(title, rank, devices, patch, ribbon = null) {
+  return {
+    title,
+    rank,
+    layout: 'officer',
+    art: [
+      ...devices.map(([device, x, w]) => ({ src: `device-${device}.png`, x, y: 0, w, h: 1.387 })),
+      ...(ribbon ? [{ src: `ribbon-${ribbon.name}.png`, x: patch.x, y: ribbon.y, w: 2.344, h: 0.703 }] : []),
+      { src: 'squadron-patch.png', x: patch.x, y: patch.y, w: 2.344, h: 2.344, crop: CERTIFICATE_PATCH_CROP }
+    ]
+  };
+}
+
+const ONE_CIRCLE = ['1circle', 4.248, 1.387];
+const TWO_CIRCLES = ['2circle', 3.942, 2.116];
+const THREE_CIRCLES = ['3circle', 3.314, 3.373];
+const ONE_DIAMOND = ['1diamond', 4.493, 1.013];
+const OFFICER_PATCH = { x: 0.092, y: 1.641 };
+
 const CERTIFICATE_TEMPLATES = {
-  'Achievement 1': { title: 'Achievement 1', rank: 'C/Amn', layout: 'enlisted', badge: 'assets/certificates/insignia-amn.png', honoree: 'Major General John F. Curry' },
-  'Achievement 2': { title: 'Achievement 2', rank: 'C/A1C', layout: 'enlisted', badge: 'assets/certificates/insignia-a1c.png', honoree: 'General of the Air Force Hap Arnold' },
-  'Achievement 3': { title: 'Achievement 3', rank: 'C/SrA', layout: 'enlisted', badge: 'assets/certificates/insignia-sra.png', honoree: 'Colonel Mary Feik' },
-  'Wright Brothers': { title: 'Wright Brothers', titleSuffix: 'Milestone Award', rank: 'C/SSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-ssgt.png', honoree: 'Orville & Wilbur Wright' },
-  'Achievement 4': { title: 'Achievement 4', rank: 'C/TSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-tsgt.png', honoree: 'Captain Eddie Rickenbacker' },
-  'Achievement 5': { title: 'Achievement 5', rank: 'C/MSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-msgt.png' },
-  'Achievement 6': { title: 'Achievement 6', rank: 'C/SMSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-smsgt.png', honoree: 'General Jimmy Doolittle' },
-  'Achievement 7': { title: 'Achievement 7', rank: 'C/CMSgt', layout: 'enlisted', badge: 'assets/certificates/insignia-cmsgt.png', honoree: 'Dr. Robert H. Goddard' },
-  'Achievement 8': { title: 'Achievement 8', rank: null, layout: 'enlisted', badge: 'assets/certificates/insignia-cmsgt.png', honoree: 'Neil Armstrong' },
-  'Billy Mitchell': { title: 'Brigadier General Billy Mitchell', titleSuffix: 'Milestone Award', rank: 'C/2nd Lt', layout: 'officer', badge: 'assets/certificates/device-1circle.png' },
-  'Achievement 9': { title: 'Achievement 9', rank: null, layout: 'officer', badge: 'assets/certificates/device-1circle.png' },
-  'Achievement 10': { title: 'Achievement 10', rank: 'C/1st Lt', layout: 'officer', badge: 'assets/certificates/device-2circle.png', honoree: '1st Lt Willa Brown' },
-  'Achievement 11': { title: 'Achievement 11', rank: null, layout: 'officer', badge: 'assets/certificates/device-2circle.png' },
-  'Amelia Earhart': { title: 'Amelia Earhart', titleSuffix: 'Milestone Award', rank: 'C/Capt', layout: 'officer', badge: 'assets/certificates/device-3circle.png' },
-  'Achievement 12': { title: 'Achievement 12', rank: null, layout: 'officer', badge: 'assets/certificates/device-3circle.png' },
-  'Achievement 13': { title: 'Achievement 13', rank: null, layout: 'officer', badge: 'assets/certificates/device-3circle.png' },
-  'Achievement 14': { title: 'Achievement 14', rank: 'C/Maj', layout: 'officer', badge: 'assets/certificates/device-1diamond.png', honoree: 'Colonel George Boyd' },
-  'Achievement 15': { title: 'Achievement 15', rank: null, layout: 'officer', badge: 'assets/certificates/device-1diamond.png', honoree: 'Dr. Sally Ride' },
-  'Achievement 16': { title: 'Achievement 16', rank: null, layout: 'officer', badge: 'assets/certificates/device-1diamond.png' },
-  'Gen Ira C Eaker': { title: 'General Ira C. Eaker', titleSuffix: 'Milestone Award', rank: 'C/Lt Col', layout: 'officer', badge: 'assets/certificates/device-2diamond.png' },
-  'Gen Carl A Spaatz': { title: 'General Carl A. Spaatz', titleSuffix: 'Milestone Award', rank: 'C/Col', layout: 'officer', badge: 'assets/certificates/device-3diamond.png' }
+  'Achievement 1': enlistedCertificate('ACHIEVEMENT 1', 'C/Amn', 'achievement-1', 1.679, 'amn', 2.62, 1.326),
+  'Achievement 2': enlistedCertificate('ACHIEVEMENT 2', 'C/A1C', 'achievement-2', 1.715, 'a1c', 2.584, 1.326),
+  'Achievement 3': enlistedCertificate('ACHIEVEMENT 3', 'C/SrA', 'achievement-3', 1.637, 'sra', 2.662, 1.326),
+  'Wright Brothers': enlistedCertificate('Wright Brothers Award', 'C/SSgt', 'wright-brothers', 1.602, 'ssgt', 2.543, 1.48),
+  'Achievement 4': enlistedCertificate('Achievement 4', 'C/TSgt', 'achievement-4', 1.488, 'tsgt', 2.429, 1.708),
+  'Achievement 5': enlistedCertificate('Achievement 5', 'C/MSgt', 'achievement-5', 1.011, 'msgt', 2.036, 2.28, 0.449),
+  'Achievement 6': enlistedCertificate('Achievement 6', 'C/SMSgt', 'achievement-6', 1.011, 'smsgt', 2.036, 2.454),
+  'Achievement 7': enlistedCertificate('Achievement 7', 'C/CMSgt', 'achievement-7', 0.978, 'cmsgt', 2.003, 2.644, 0.406),
+  'Achievement 8': enlistedCertificate('Achievement 8', null, 'achievement-8', 0.972, 'cmsgt', 2.003, 2.644, 0.406),
+  'Billy Mitchell': officerCertificate('Billy Mitchell Award', 'C/2nd Lt', [ONE_CIRCLE], { x: 0.143, y: 2.236 }, { name: 'mitchell', y: 1.045 }),
+  'Achievement 9': officerCertificate('Achievement 9', null, [ONE_CIRCLE], OFFICER_PATCH),
+  'Achievement 10': officerCertificate('Achievement 10', 'C/1st Lt', [ONE_CIRCLE, TWO_CIRCLES], OFFICER_PATCH),
+  'Achievement 11': officerCertificate('Achievement 11', null, [ONE_CIRCLE, TWO_CIRCLES], OFFICER_PATCH),
+  'Amelia Earhart': officerCertificate('Amelia Earhart Award', 'C/Capt', [THREE_CIRCLES], { x: 0.082, y: 2.201 }, { name: 'earhart', y: 1.081 }),
+  'Achievement 12': officerCertificate('Achievement 12', null, [THREE_CIRCLES], OFFICER_PATCH),
+  'Achievement 13': officerCertificate('Achievement 13', null, [THREE_CIRCLES], OFFICER_PATCH),
+  'Achievement 14': officerCertificate('Achievement 14', 'C/Maj', [ONE_DIAMOND], OFFICER_PATCH),
+  'Achievement 15': officerCertificate('Achievement 15', null, [ONE_DIAMOND], OFFICER_PATCH),
+  'Achievement 16': officerCertificate('Achievement 16', null, [ONE_DIAMOND], OFFICER_PATCH),
+  'Gen Ira C Eaker': officerCertificate('Gen Ira C. Eaker', 'C/Lt Col', [['2diamond', 4.255, 1.489]], { x: 0.092, y: 2.201 }, { name: 'eaker', y: 1.081 }),
+  'Gen Carl A Spaatz': officerCertificate('Gen Carl A. Spaatz Award', 'C/Col', [['3diamond', 3.945, 2.11]], { x: 0.092, y: 2.242 }, { name: 'spaatz', y: 1.039 })
 };
 const ATTENDANCE_LISTS = [
   {
@@ -630,15 +684,21 @@ function handlePromotionCertificateFilterChange() {
   renderPromotionCertificateReport();
 }
 
-function handlePrintPromotionCertificatesReport() {
+async function handlePrintPromotionCertificatesReport() {
   const rows = getPromotionCertificateRows();
   if (!rows.length) {
     setStatusMessage('No promotion certificates match the current report filters.', 'error');
     return;
   }
 
+  // The font must be ready before the text is measured, and the artwork before the
+  // print dialog snapshots the pages.
+  setStatusMessage(`Preparing ${formatCertificateCount(rows.length)} for printing...`, 'info');
+  await loadCertificateFonts();
   clearPrintReports();
   renderPrintablePromotionCertificatesReport(rows);
+  await waitForImages(document.getElementById('printReportsPrintReport'));
+  setStatusMessage(`${formatCertificateCount(rows.length)} ready to print.`, 'success');
   document.body.classList.add('printing-report');
   window.print();
 }
@@ -1338,33 +1398,87 @@ function renderPrintablePromotionCertificatesReport(rows) {
 }
 
 function renderCertificatePage(row) {
-  const template = CERTIFICATE_TEMPLATES[row.promotionName] || {};
+  const template = CERTIFICATE_TEMPLATES[row.promotionName] || { title: row.promotionName, layout: 'officer', art: [] };
   const isOfficer = template.layout === 'officer';
   const title = template.title || row.promotionName || 'Unknown';
+  const name = row.name || 'Unknown';
   const requirementsText = template.rank
     ? `Has satisfactorily completed all requirements and is entitled to promotion to ${template.rank}`
     : 'Has satisfactorily completed all requirements';
-
-  const emblemsHtml = `
-    ${isOfficer && template.badge ? `<div class="cert-devices"><img src="${esc(template.badge)}" alt="" /></div>` : ''}
-    ${!isOfficer && template.badge ? `<div class="cert-insignia"><img src="${esc(template.badge)}" alt="" /></div>` : ''}
-    <div class="cert-seal"><img src="assets/certificates/seal.png" alt="" /></div>
-    <div class="cert-wings"><img src="assets/certificates/wings.png" alt="" /></div>`;
+  const textTop = isOfficer ? CERTIFICATE_TEXT_BOX.officerTop : CERTIFICATE_TEXT_BOX.enlistedTop;
 
   return `<section class="certificate-page">
-    <div class="certificate-panel ${isOfficer ? 'cert-officer' : 'cert-enlisted'}">
-      ${emblemsHtml}
-      <div class="cert-body">
-        <p class="cert-org">Civil Air Patrol</p>
-        <h1 class="cert-title${template.titleSuffix ? ' cert-title-milestone' : ''}">${esc(title)}${template.titleSuffix ? `<br>${esc(template.titleSuffix)}` : ''}</h1>
-        ${template.honoree ? `<p class="cert-honoree">${esc(template.honoree)}</p>` : ''}
-        <p class="cert-presented">This certificate is presented to</p>
-        <p class="cert-name">${esc(row.name || 'Unknown')}</p>
-        <p class="cert-requirements">${esc(requirementsText)}</p>
-        ${row.awardDateText ? `<p class="cert-date">${esc(row.awardDateText)}</p>` : ''}
+    <div class="certificate-sheet">
+      ${[...template.art, ...CERTIFICATE_SEAL_AND_WINGS].map(renderCertificateArt).join('')}
+      <div class="cert-text" style="left:${CERTIFICATE_TEXT_BOX.x}in;top:${textTop}in;width:${CERTIFICATE_TEXT_BOX.w}in">
+        <p class="cert-large">CIVIL AIR PATROL</p>
+        <p class="cert-large" style="font-size:${fitCertificateFontSize(title, 26)}pt">${esc(title)}</p>
+        <p class="cert-large">&nbsp;</p>
+        <p class="cert-small">This certificate is presented to</p>
+        <p class="cert-small">&nbsp;</p>
+        <p class="cert-large cert-name" style="font-size:${fitCertificateFontSize(name, 26)}pt">${esc(name)}</p>
+        <p class="cert-small">&nbsp;</p>
+        <p class="cert-small cert-requirements">${esc(requirementsText)}</p>
+        <p class="cert-small">&nbsp;</p>
+        <p class="cert-large">${row.awardDateText ? esc(row.awardDateText) : '&nbsp;'}</p>
       </div>
     </div>
   </section>`;
+}
+
+function renderCertificateArt(item) {
+  const box = `left:${item.x}in;top:${item.y}in;width:${item.w}in;height:${item.h}in`;
+  const src = esc(CERTIFICATE_ART + item.src);
+  if (!item.crop) return `<img class="cert-art" src="${src}" alt="" style="${box}" />`;
+
+  // A cropped picture keeps its frame; the image is enlarged and shifted so only the
+  // uncropped part shows, matching how the slide deck crops it.
+  const { l, r, t, b } = item.crop;
+  const imageWidth = item.w / (1 - (l + r) / 100);
+  const imageHeight = item.h / (1 - (t + b) / 100);
+  return `<div class="cert-art cert-art-cropped" style="${box}">
+    <img src="${src}" alt="" style="width:${imageWidth}in;height:${imageHeight}in;left:${-imageWidth * l / 100}in;top:${-imageHeight * t / 100}in" />
+  </div>`;
+}
+
+// The deck sets each line in one text box, so a long title or name shrinks to stay on
+// one line instead of wrapping into the lines below it.
+function fitCertificateFontSize(text, basePoints, minPoints = 14) {
+  const maxWidthPx = (CERTIFICATE_TEXT_BOX.w - 0.2) * 96;
+  const context = (fitCertificateFontSize.canvas ||= document.createElement('canvas')).getContext('2d');
+  context.font = `700 ${basePoints}pt ${CERTIFICATE_FONT_FAMILY}`;
+  const widthPx = context.measureText(clean(text)).width;
+  if (widthPx <= maxWidthPx) return basePoints;
+  return Math.max(minPoints, Math.floor(basePoints * (maxWidthPx / widthPx) * 10) / 10);
+}
+
+async function loadCertificateFonts() {
+  if (!document.fonts || !document.fonts.load) return;
+  try {
+    await Promise.all([
+      document.fonts.load(`700 26pt ${CERTIFICATE_FONT_FAMILY}`),
+      document.fonts.load(`700 12pt ${CERTIFICATE_FONT_FAMILY}`)
+    ]);
+  } catch (error) {
+    console.warn('Certificate font did not load; printing with the fallback font.', error);
+  }
+}
+
+// Waits for every picture to load or fail, giving up after a few seconds so a stalled
+// image can never keep the print dialog from opening.
+async function waitForImages(container, timeoutMs = 5000) {
+  const loads = [...container.querySelectorAll('img')].map(image => (
+    image.complete
+      ? Promise.resolve()
+      : new Promise(resolve => {
+        image.addEventListener('load', resolve, { once: true });
+        image.addEventListener('error', resolve, { once: true });
+      })
+  ));
+  await Promise.race([
+    Promise.all(loads),
+    new Promise(resolve => window.setTimeout(resolve, timeoutMs))
+  ]);
 }
 
 function renderPrintableMilestonesReport() {

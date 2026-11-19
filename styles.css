@@ -1233,151 +1233,68 @@ tr:hover td {
     break-before: auto;
     page-break-before: auto;
   }
+}
 
-  .certificate-panel {
-    position: relative;
-    display: grid;
-    align-items: center;
-    align-content: center;
-    gap: 0.15in;
-    width: 100%;
-    max-width: 9.5in;
-    aspect-ratio: 3 / 2;
-    margin: 0 auto;
-    padding: 0.45in 0.55in;
-    border: 10px double var(--cap-blue-900, #0f2747);
-    color: #111;
-    background: #fff;
-  }
+/* Promotion certificates copy the slide deck: a 10in x 5.625in sheet with every element
+   placed at the deck's coordinates by inline styles. */
+.certificate-sheet {
+  position: relative;
+  width: 10in;
+  height: 5.625in;
+  overflow: hidden;
+  background: #fff;
+  color: #001689;
+  font-family: 'Merriweather', Georgia, serif;
+  font-weight: 700;
+}
 
-  .cert-enlisted {
-    grid-template-columns: 1.9in 1fr 1.7in;
-    grid-template-rows: 1fr 1fr;
-    grid-template-areas:
-      "insignia body seal"
-      "insignia body wings";
-  }
+.cert-art {
+  position: absolute;
+  display: block;
+}
 
-  .cert-officer {
-    grid-template-columns: 1.8in 1fr 1.8in;
-    grid-template-rows: auto auto;
-    grid-template-areas:
-      "devices devices devices"
-      "seal body wings";
-  }
+.cert-art-cropped {
+  overflow: hidden;
+}
 
-  .cert-insignia,
-  .cert-devices,
-  .cert-seal,
-  .cert-wings {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.cert-art-cropped img {
+  position: absolute;
+  max-width: none;
+}
 
-  .cert-insignia { grid-area: insignia; }
-  .cert-devices { grid-area: devices; margin-bottom: 0.1in; }
-  .cert-seal { grid-area: seal; }
-  .cert-wings { grid-area: wings; }
-  .cert-body { grid-area: body; text-align: center; }
+.cert-text {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 0.1in;
+  text-align: center;
+}
 
-  .cert-insignia img {
-    width: 1.65in;
-    height: auto;
-  }
+.cert-text p {
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+}
 
-  .cert-devices img {
-    max-height: 0.5in;
-    width: auto;
-  }
+.cert-large {
+  font-size: 26pt;
+}
 
-  .cert-officer .cert-devices img {
-    max-height: 1.05in;
-  }
+.cert-small {
+  font-size: 12pt;
+}
 
-  .cert-seal img {
-    width: 1.5in;
-    height: auto;
-  }
+/* The deck keeps the date at one height whether this sentence takes one line or two. */
+.cert-text .cert-requirements {
+  min-height: 2.4em;
+  white-space: normal;
+}
 
-  .cert-officer .cert-seal img {
-    width: 1.6in;
-  }
-
-  .cert-wings img {
-    width: 1.2in;
-    height: auto;
-  }
-
-  .cert-officer .cert-wings img {
-    width: 1.3in;
-  }
-
-  .cert-org {
-    margin: 0 0 2px;
-    color: var(--cap-blue-900, #0f2747);
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: 13pt;
-  }
-
-  .cert-title {
-    margin: 0 0 0.22in;
-    color: var(--cap-blue-900, #0f2747);
-    text-transform: uppercase;
-    font-size: 21pt;
-    font-weight: 800;
-    line-height: 1.25;
-  }
-
-  .cert-title-milestone {
-    font-size: 15pt;
-  }
-
-  .cert-honoree {
-    margin: -0.14in 0 0.14in;
-    color: var(--cap-blue-900, #0f2747);
-    font-style: italic;
-    font-weight: 700;
-    font-size: 12pt;
-    white-space: nowrap;
-  }
-
-  .cert-presented {
-    margin: 0 0 0.08in;
-    color: #555;
-    font-weight: 700;
-    font-size: 10pt;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .cert-name {
-    margin: 0 auto 0.16in;
-    padding: 0 0.1in 0.08in;
-    border-bottom: 1px solid var(--cap-blue-900, #0f2747);
-    display: inline-block;
-    min-width: 3.4in;
-    color: var(--cap-blue-900, #0f2747);
-    font-size: 19pt;
-    font-weight: 800;
-  }
-
-  .cert-requirements {
-    margin: 0 auto 0.18in;
-    color: #222;
-    font-size: 11pt;
-    font-weight: 700;
-    max-width: 4.6in;
-  }
-
-  .cert-date {
-    margin: 0;
-    color: var(--cap-blue-900, #0f2747);
-    font-size: 13pt;
-    font-weight: 800;
-  }
+/* The rule under the name sits just clear of its descenders, where the deck draws it. */
+.cert-text .cert-name {
+  /* A long name shrinks, but its line keeps the full-size height so nothing below moves. */
+  line-height: 31.2pt;
+  padding-bottom: 0.05in;
+  border-bottom: 0.75pt solid #595959;
 }
 
 @page certificate {
